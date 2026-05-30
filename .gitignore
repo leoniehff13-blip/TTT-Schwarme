@@ -24,3 +24,9 @@ dist-ssr
 *.sw?
 
 .env
+.env.local
+
+# Setup-Skript enthält API Key – nicht in Git!
+setup-appwrite.js
+
+dist2/
