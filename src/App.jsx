@@ -941,7 +941,11 @@ function FanVoting({ teilnehmer, onVote, onUnvote }) {
     localStorage.removeItem("ttt_fan_vote");
   };
 
-  const sorted = [...teilnehmer].sort((a, b) => (b.fan_votes ?? 0) - (a.fan_votes ?? 0));
+  const sorted = [...teilnehmer].sort((a, b) => {
+    if (a.klasse < b.klasse) return -1;
+    if (a.klasse > b.klasse) return 1;
+    return a.name.localeCompare(b.name, "de");
+  });
   const filtered = sorted.filter(t =>
     search === "" ||
     t.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -986,7 +990,7 @@ function FanVoting({ teilnehmer, onVote, onUnvote }) {
 
       {/* Liste */}
       <div className="flex flex-col gap-2">
-        {filtered.map((t, i) => {
+        {filtered.map((t) => {
           const isVoted = t.id === votedId;
           const votes = t.fan_votes ?? 0;
           const barWidth = maxVotes > 0 ? (votes / maxVotes) * 100 : 0;
@@ -1008,7 +1012,6 @@ function FanVoting({ teilnehmer, onVote, onUnvote }) {
                 style={{ width: `${barWidth}%` }}
               />
               <div className="relative flex items-center gap-3 flex-1 min-w-0">
-                <span className="text-gray-600 text-sm w-5 shrink-0">{i + 1}</span>
                 <div className="flex-1 min-w-0">
                   <div className={`font-bold truncate ${isVoted ? "text-[#b1e6a8]" : "text-white"}`}>
                     {t.name}
