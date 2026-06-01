@@ -454,7 +454,7 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk, liveKlasse, l
 
 // ─── View: Rangliste ─────────────────────────────────────────────────────────
 
-function RanglisteView({ teilnehmer, liveKlasse, onSetLiveKlasse, isAdmin }) {
+function RanglisteView({ teilnehmer, liveKlasse }) {
   const [selectedKlasse, setSelectedKlasse] = useState("ALL");
 
   const renderFanKlasse = () => {
@@ -533,18 +533,6 @@ function RanglisteView({ teilnehmer, liveKlasse, onSetLiveKlasse, isAdmin }) {
             <span className="ml-auto text-[#b1e6a8] text-xs">
               Spitze: {fmWeite(members[0].bestWeite)}
             </span>
-          )}
-          {isAdmin && (
-            <button
-              onClick={() => onSetLiveKlasse(liveKlasse === k ? null : k)}
-              className={`ml-2 px-2 py-0.5 rounded text-xs border transition-colors ${
-                liveKlasse === k
-                  ? "bg-[#b1e6a8] text-black border-[#b1e6a8]"
-                  : "border-[#333] text-gray-500 hover:border-[#b1e6a8] hover:text-[#b1e6a8]"
-              }`}
-            >
-              {liveKlasse === k ? "Live ✓" : "Als Live setzen"}
-            </button>
           )}
         </div>
         {members.length === 0 ? (
@@ -1354,7 +1342,7 @@ export default function App() {
             onSetLiveTeilnehmer={handleSetLiveTeilnehmer}
           />
         )}
-        {tab === "rangliste" && <RanglisteView teilnehmer={teilnehmer} liveKlasse={liveKlasse} onSetLiveKlasse={handleSetLiveKlasse} isAdmin={isAdmin} />}
+        {tab === "rangliste" && <RanglisteView teilnehmer={teilnehmer} liveKlasse={liveKlasse} />}
         {tab === "fan" && <FanVoting teilnehmer={teilnehmer} onVote={handleVote} onUnvote={handleUnvote} />}
         {tab === "start" && <StartAnzeige teilnehmer={teilnehmer} liveKlasse={liveKlasse} liveTeilnehmerId={liveTeilnehmerId} />}
       </main>
