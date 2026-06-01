@@ -748,7 +748,7 @@ function AlleView({ teilnehmer, onUpdate, isAdmin }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-[#111] border-b border-[#222]">
-              {["#","Klasse","Name","Fahrzeug","Kennzeichen","PS","Weite","Zahlung"].map(h => (
+              {["Startnummer","Klasse","Name","Fahrzeug","Kennzeichen","PS","Weite","Zahlung"].map(h => (
                 <th key={h} className="px-3 py-3 text-left text-[#b1e6a8] font-semibold">{h}</th>
               ))}
             </tr>
