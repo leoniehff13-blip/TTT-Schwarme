@@ -9,3 +9,4 @@ export { ID, Query };
 
 export const DB_ID = import.meta.env.VITE_APPWRITE_DB_ID || "ttt";
 export const COLLECTION_ID = "teilnehmer";
+export const SETTINGS_COL_ID = "settings";

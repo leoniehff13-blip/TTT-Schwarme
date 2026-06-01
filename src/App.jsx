@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import "./App.css";
-import { databases, ID, Query, DB_ID, COLLECTION_ID } from "./lib/appwrite";
+import { databases, ID, Query, DB_ID, COLLECTION_ID, SETTINGS_COL_ID } from "./lib/appwrite";
 import { INITIAL_TEILNEHMER, KLASSEN, KLASSEN_INFO } from "./data/initialData";
 
 // ─── Appwrite helpers ───────────────────────────────────────────────────────
@@ -59,6 +59,31 @@ async function updateInAppwrite(t) {
     startnummer: t.startnummer,
   };
   return databases.updateDocument(DB_ID, COLLECTION_ID, t.id, data);
+}
+
+async function loadLiveState() {
+  try {
+    const doc = await databases.getDocument(DB_ID, SETTINGS_COL_ID, "live");
+    return { liveKlasse: doc.liveKlasse || null, liveTeilnehmerId: doc.liveTeilnehmerId || null };
+  } catch {
+    return null;
+  }
+}
+
+async function saveLiveState(liveKlasse, liveTeilnehmerId) {
+  try {
+    await databases.updateDocument(DB_ID, SETTINGS_COL_ID, "live", {
+      liveKlasse: liveKlasse || null,
+      liveTeilnehmerId: liveTeilnehmerId || null,
+    });
+  } catch {
+    try {
+      await databases.createDocument(DB_ID, SETTINGS_COL_ID, "live", {
+        liveKlasse: liveKlasse || null,
+        liveTeilnehmerId: liveTeilnehmerId || null,
+      });
+    } catch {}
+  }
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -835,19 +860,32 @@ const ADMIN_TABS = [
 
 export default function App() {
   const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem("ttt_admin") === "1");
-  const [liveKlasse, setLiveKlasse] = useState(() => localStorage.getItem("ttt_live_klasse") || null);
-  const [liveTeilnehmerId, setLiveTeilnehmerId] = useState(() => localStorage.getItem("ttt_live_teilnehmer") || null);
+  const [liveKlasse, setLiveKlasse] = useState(null);
+  const [liveTeilnehmerId, setLiveTeilnehmerId] = useState(null);
 
-  const handleSetLiveKlasse = (k) => {
+  // Live-State aus Appwrite laden und alle 3s pollen
+  useEffect(() => {
+    let cancelled = false;
+    const poll = async () => {
+      const state = await loadLiveState();
+      if (!cancelled && state) {
+        setLiveKlasse(state.liveKlasse);
+        setLiveTeilnehmerId(state.liveTeilnehmerId);
+      }
+    };
+    poll();
+    const interval = setInterval(poll, 3000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
+
+  const handleSetLiveKlasse = async (k) => {
     setLiveKlasse(k);
-    if (k) localStorage.setItem("ttt_live_klasse", k);
-    else localStorage.removeItem("ttt_live_klasse");
+    await saveLiveState(k, liveTeilnehmerId);
   };
 
-  const handleSetLiveTeilnehmer = (id) => {
+  const handleSetLiveTeilnehmer = async (id) => {
     setLiveTeilnehmerId(id);
-    if (id) localStorage.setItem("ttt_live_teilnehmer", id);
-    else localStorage.removeItem("ttt_live_teilnehmer");
+    await saveLiveState(liveKlasse, id);
   };
   const [showPinModal, setShowPinModal] = useState(false);
   const TABS = isAdmin ? ADMIN_TABS : PUBLIC_TABS;
