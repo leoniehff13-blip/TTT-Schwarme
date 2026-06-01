@@ -580,30 +580,8 @@ function StartAnzeige({ teilnehmer, liveKlasse, liveTeilnehmerId, onSetLiveTeiln
 
   const liveT = sorted.find(t => t.id === liveTeilnehmerId) || null;
 
-  const bezahlt = teilnehmer.filter(t => t.zahlung).length;
-  const mitWeite = teilnehmer.filter(t => t.weite !== null).length;
-
   return (
     <div className="flex flex-col gap-4">
-
-      {/* Stats */}
-      <div className="flex flex-wrap gap-6 px-1 text-center">
-        {[
-          { label: "Gesamt", value: teilnehmer.length, color: "text-white" },
-          { label: "Bezahlt", value: `${bezahlt}/${teilnehmer.length}`, color: "text-[#b1e6a8]" },
-          { label: "Ergebnisse", value: `${mitWeite}/${teilnehmer.length}`, color: "text-white" },
-          ...KLASSEN.map(k => ({
-            label: k,
-            value: teilnehmer.filter(t => t.klasse === k).length,
-            color: "text-gray-300"
-          }))
-        ].map(s => (
-          <div key={s.label} className="flex flex-col">
-            <span className={`text-lg font-bold ${s.color}`}>{s.value}</span>
-            <span className="text-xs text-gray-500">{s.label}</span>
-          </div>
-        ))}
-      </div>
 
       {/* Live-Anzeige (immer sichtbar, wenn jemand live ist) */}
       {liveT && (
