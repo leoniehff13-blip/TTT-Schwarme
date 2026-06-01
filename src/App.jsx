@@ -702,7 +702,7 @@ function StartAnzeige({ teilnehmer }) {
 
 // ─── View: Alle Teilnehmer ───────────────────────────────────────────────────
 
-function AlleView({ teilnehmer }) {
+function AlleView({ teilnehmer, onUpdate, isAdmin }) {
   const [search, setSearch] = useState("");
   const filtered = teilnehmer.filter(t =>
     search === "" ||
@@ -748,7 +748,7 @@ function AlleView({ teilnehmer }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-[#111] border-b border-[#222]">
-              {["Klasse","Name","Fahrzeug","Kennzeichen","PS","Weite","Zahlung"].map(h => (
+              {["#","Klasse","Name","Fahrzeug","Kennzeichen","PS","Weite","Zahlung"].map(h => (
                 <th key={h} className="px-3 py-3 text-left text-[#b1e6a8] font-semibold">{h}</th>
               ))}
             </tr>
@@ -756,6 +756,19 @@ function AlleView({ teilnehmer }) {
           <tbody>
             {filtered.map((t, i) => (
               <tr key={t.id} className={`border-b border-[#1a1a1a] ${i % 2 === 0 ? "bg-[#0a0a0a]" : "bg-[#0d0d0d]"}`}>
+                <td className="px-3 py-2 text-center">
+                  {isAdmin ? (
+                    <input
+                      type="text"
+                      value={t.startnummer || ""}
+                      onChange={e => onUpdate({ ...t, startnummer: e.target.value })}
+                      placeholder="—"
+                      className="w-12 bg-[#111] border border-[#333] rounded px-1 py-1 text-[#b1e6a8] font-bold text-center focus:border-[#b1e6a8] focus:outline-none text-sm"
+                    />
+                  ) : (
+                    <span className="text-[#b1e6a8] font-bold text-sm">{t.startnummer || "—"}</span>
+                  )}
+                </td>
                 <td className="px-3 py-2">
                   <span className="bg-[#1a2a1a] text-[#b1e6a8] text-xs font-bold px-2 py-0.5 rounded">{t.klasse}</span>
                 </td>
@@ -1037,7 +1050,7 @@ export default function App() {
         )}
         {tab === "rangliste" && <RanglisteView teilnehmer={teilnehmer} />}
         {tab === "start" && <StartAnzeige teilnehmer={teilnehmer} />}
-        {tab === "alle" && <AlleView teilnehmer={teilnehmer} />}
+        {tab === "alle" && <AlleView teilnehmer={teilnehmer} onUpdate={handleUpdate} isAdmin={isAdmin} />}
       </main>
     </div>
   );
