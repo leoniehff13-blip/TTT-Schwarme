@@ -358,8 +358,7 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk, liveKlasse, l
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-[#111] border-b border-[#222]">
-              <th className="px-3 py-3 text-left text-[#b1e6a8] font-semibold w-8">✓</th>
-              <th className="px-3 py-3 text-center text-[#b1e6a8] font-semibold w-16">#</th>
+              <th className="px-3 py-3 text-center text-[#b1e6a8] font-semibold w-24">Startnummer</th>
               <th className="px-3 py-3 text-left text-[#b1e6a8] font-semibold w-16">Live</th>
               <th className="px-3 py-3 text-left text-[#b1e6a8] font-semibold">Name</th>
               <th className="px-3 py-3 text-left text-[#b1e6a8] font-semibold hidden md:table-cell">Fahrzeug</th>
@@ -379,19 +378,6 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk, liveKlasse, l
                   i % 2 === 0 ? "bg-[#0a0a0a]" : "bg-[#0d0d0d]"
                 } hover:bg-[#141a14]`}
               >
-                <td className="px-3 py-2 text-center">
-                  <button
-                    onClick={() => onUpdate({ ...t, zahlung: !t.zahlung })}
-                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                      t.zahlung
-                        ? "bg-[#b1e6a8] border-[#b1e6a8] text-black"
-                        : "border-[#444] bg-transparent"
-                    }`}
-                    title={t.zahlung ? "Bezahlt" : "Nicht bezahlt"}
-                  >
-                    {t.zahlung && <span className="text-xs font-bold">✓</span>}
-                  </button>
-                </td>
                 <td className="px-3 py-2 text-center">
                   <input
                     type="text"
@@ -447,7 +433,7 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk, liveKlasse, l
             ))}
             {klasse_list.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                   Keine Teilnehmer gefunden
                 </td>
               </tr>
