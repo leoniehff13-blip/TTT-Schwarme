@@ -1,4 +1,4 @@
-export const KLASSEN = ['F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12','F14','S3','S4','S5','S6'];
+export const KLASSEN = ['F2','F3','F4','F5','F6','F7','F9','F10','F12','F14','S3','S4','S5','S6'];
 
 export const KLASSEN_INFO = {
   F2:  { label: 'F2',  gruppe: 'Fahrzeug', maxPS: 60 },
@@ -7,10 +7,8 @@ export const KLASSEN_INFO = {
   F5:  { label: 'F5',  gruppe: 'Fahrzeug', maxPS: 130 },
   F6:  { label: 'F6',  gruppe: 'Fahrzeug', maxPS: 160 },
   F7:  { label: 'F7',  gruppe: 'Fahrzeug', maxPS: 200 },
-  F8:  { label: 'F8',  gruppe: 'Fahrzeug', maxPS: 240 },
   F9:  { label: 'F9',  gruppe: 'Fahrzeug', maxPS: 300 },
   F10: { label: 'F10', gruppe: 'Fahrzeug', maxPS: 400 },
-  F11: { label: 'F11', gruppe: 'Fahrzeug', maxPS: 500 },
   F12: { label: 'F12', gruppe: 'Fahrzeug', maxPS: 600 },
   F14: { label: 'F14', gruppe: 'Fahrzeug', maxPS: 9999 },
   S3:  { label: 'S3',  gruppe: 'Schlepper', maxPS: 80 },
