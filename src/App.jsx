@@ -668,47 +668,22 @@ function StartAnzeige({ teilnehmer, liveKlasse, liveTeilnehmerId }) {
             </div>
 
             {/* Fahrender Trecker */}
-            <div className="overflow-hidden mb-4" style={{ height: 64 }}>
-              <div style={{
-                display: "inline-block",
-                animation: "tractorDrive 6s linear infinite",
-                willChange: "transform",
-              }}>
-                <svg viewBox="0 0 420 100" height="64" fill="white" xmlns="http://www.w3.org/2000/svg">
-                  {/* Sled / Gewichtsschlitten */}
-                  <rect x="10" y="48" width="90" height="32" rx="4"/>
-                  <circle cx="30" cy="88" r="10" fill="white" stroke="black" strokeWidth="3"/>
-                  <circle cx="80" cy="88" r="10" fill="white" stroke="black" strokeWidth="3"/>
-                  <rect x="28" y="18" width="36" height="32" rx="3"/>
-                  <rect x="24" y="14" width="44" height="6" rx="2"/>
-                  <circle cx="46" cy="24" r="5" fill="black"/>
-                  <line x1="100" y1="64" x2="200" y2="64" stroke="white" strokeWidth="5"/>
-                  <rect x="148" y="58" width="20" height="8" rx="2" fill="black"/>
-                  {/* Trecker */}
-                  <ellipse cx="260" cy="84" rx="24" ry="24" fill="white" stroke="black" strokeWidth="3"/>
-                  <ellipse cx="260" cy="84" rx="10" ry="10" fill="black"/>
-                  <ellipse cx="340" cy="88" rx="18" ry="18" fill="white" stroke="black" strokeWidth="3"/>
-                  <ellipse cx="340" cy="88" rx="8" ry="8" fill="black"/>
-                  <rect x="200" y="44" width="120" height="40" rx="4"/>
-                  <rect x="290" y="24" width="50" height="28" rx="3" fill="white"/>
-                  <rect x="296" y="30" width="14" height="10" rx="1" fill="black"/>
-                  {/* Fahrer */}
-                  <circle cx="310" cy="18" r="7"/>
-                  <rect x="303" y="25" width="14" height="16" rx="3"/>
-                  <line x1="310" y1="34" x2="298" y2="44" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-                  <line x1="310" y1="34" x2="322" y2="44" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-                  {/* Auspuff */}
-                  <rect x="348" y="10" width="6" height="22" rx="2"/>
-                  {/* Motorhaube Linien */}
-                  <line x1="250" y1="52" x2="250" y2="68" stroke="black" strokeWidth="2"/>
-                  <line x1="240" y1="52" x2="240" y2="68" stroke="black" strokeWidth="2"/>
-                </svg>
-              </div>
+            <div className="overflow-hidden mb-4" style={{ height: 72 }}>
+              <img
+                src="/Dein Abschnittstext.jpeg"
+                alt="Trecker"
+                style={{
+                  height: 72,
+                  width: "auto",
+                  animation: "tractorDrive 7s linear infinite",
+                  willChange: "transform",
+                }}
+              />
             </div>
 
             <style>{`
               @keyframes tractorDrive {
-                0%   { transform: translateX(-460px); }
+                0%   { transform: translateX(-520px); }
                 100% { transform: translateX(110vw); }
               }
             `}</style>
