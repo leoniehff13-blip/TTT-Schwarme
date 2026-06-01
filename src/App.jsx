@@ -1082,6 +1082,14 @@ export default function App() {
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
+  const [showPinModal, setShowPinModal] = useState(false);
+  const TABS = isAdmin ? ADMIN_TABS : PUBLIC_TABS;
+  const [tab, setTab] = useState(isAdmin ? "teilnehmer" : "rangliste");
+  const [teilnehmer, setTeilnehmer] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [appwriteOk, setAppwriteOk] = useState(false);
+  const [saving, setSaving] = useState(false);
+
   const handleVote = useCallback(async (t) => {
     const updated = { ...t, fan_votes: (t.fan_votes ?? 0) + 1 };
     setTeilnehmer(prev => {
@@ -1103,13 +1111,6 @@ export default function App() {
     setLiveTeilnehmerId(id);
     await saveLiveState(liveKlasse, id);
   };
-  const [showPinModal, setShowPinModal] = useState(false);
-  const TABS = isAdmin ? ADMIN_TABS : PUBLIC_TABS;
-  const [tab, setTab] = useState(isAdmin ? "teilnehmer" : "rangliste");
-  const [teilnehmer, setTeilnehmer] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [appwriteOk, setAppwriteOk] = useState(false);
-  const [saving, setSaving] = useState(false);
 
   // Load data on startup
   useEffect(() => {
