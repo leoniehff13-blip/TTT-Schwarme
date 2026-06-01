@@ -534,193 +534,115 @@ function RanglisteView({ teilnehmer, liveKlasse, onSetLiveKlasse, isAdmin }) {
 
 // ─── View: Start-Anzeige ─────────────────────────────────────────────────────
 
-function StartAnzeige({ teilnehmer, liveKlasse }) {
-  const [selectedKlasse, setSelectedKlasse] = useState(liveKlasse || "F9");
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [showResult, setShowResult] = useState(false);
+function StartAnzeige({ teilnehmer, liveKlasse, liveTeilnehmerId, onSetLiveTeilnehmer, isAdmin }) {
+  // Klassen in der richtigen Reihenfolge: Live-Klasse zuerst
+  const klassenOrder = liveKlasse
+    ? [liveKlasse, ...KLASSEN.filter(k => k !== liveKlasse)]
+    : KLASSEN;
 
-  // Wenn Admin Live-Klasse ändert, automatisch umschalten
-  useEffect(() => {
-    if (liveKlasse && liveKlasse !== selectedKlasse) {
-      setSelectedKlasse(liveKlasse);
-    }
-  }, [liveKlasse]);
-
-  // Nach Startnummer sortieren (Teilnehmer ohne Startnummer ans Ende)
-  const klassenListe = teilnehmer
-    .filter(t => t.klasse === selectedKlasse)
-    .sort((a, b) => {
-      const na = parseInt(a.startnummer) || 9999;
-      const nb = parseInt(b.startnummer) || 9999;
-      return na - nb;
-    });
-  const current = klassenListe[currentIdx] || null;
-
-  const prev = () => {
-    setCurrentIdx(i => Math.max(0, i - 1));
-    setShowResult(false);
-  };
-  const next = () => {
-    setCurrentIdx(i => Math.min(klassenListe.length - 1, i + 1));
-    setShowResult(false);
-  };
-
-  useEffect(() => {
-    setCurrentIdx(0);
-    setShowResult(false);
-  }, [selectedKlasse]);
-
-  if (!current) return (
-    <div className="flex items-center justify-center h-64 text-gray-500">
-      Keine Teilnehmer in dieser Klasse
-    </div>
+  // Alle Teilnehmer nach Klasse + Startnummer sortiert
+  const sorted = klassenOrder.flatMap(k =>
+    teilnehmer
+      .filter(t => t.klasse === k)
+      .sort((a, b) => (parseInt(a.startnummer) || 9999) - (parseInt(b.startnummer) || 9999))
   );
 
-  const bestWeite = current.weite ?? current.weite2;
+  const liveT = sorted.find(t => t.id === liveTeilnehmerId) || null;
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Klassen-Auswahl */}
-      <div className="flex flex-wrap gap-2">
-        {KLASSEN.map(k => (
-          <KlasseChip key={k} k={k} active={selectedKlasse === k}
-            onClick={() => setSelectedKlasse(k)} />
-        ))}
-      </div>
+    <div className="flex flex-col gap-4">
 
-      {/* Hauptanzeige */}
-      <div
-        className="bg-black border border-[#222] rounded-2xl p-8 relative overflow-hidden"
-        style={{ minHeight: 320 }}
-      >
-        {/* Hintergrund-Muster */}
-        <div className="absolute inset-0 opacity-5" style={{
-          backgroundImage: "repeating-linear-gradient(0deg, #b1e6a8 0, #b1e6a8 1px, transparent 0, transparent 50%)",
-          backgroundSize: "100% 40px"
-        }}></div>
-
-        <div className="relative z-10">
-          {/* Klasse + Position */}
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <span className="text-[#b1e6a8] text-6xl font-black leading-none" style={{ fontFamily: "Arial Black, sans-serif" }}>
-                {selectedKlasse}
+      {/* Live-Anzeige (immer sichtbar, wenn jemand live ist) */}
+      {liveT && (
+        <div className="bg-black border-2 border-[#b1e6a8] rounded-2xl p-6 relative overflow-hidden">
+          <div className="absolute inset-0 opacity-5" style={{
+            backgroundImage: "repeating-linear-gradient(0deg, #b1e6a8 0, #b1e6a8 1px, transparent 0, transparent 50%)",
+            backgroundSize: "100% 40px"
+          }} />
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="flex items-center gap-1 bg-[#b1e6a8] text-black text-xs font-black px-2 py-0.5 rounded-full animate-pulse">
+                ● JETZT AM START
               </span>
-              {KLASSEN_INFO[selectedKlasse] && (
-                <div className="text-gray-500 text-sm mt-1">{KLASSEN_INFO[selectedKlasse].gruppe}klasse · max. {KLASSEN_INFO[selectedKlasse].maxPS < 9999 ? KLASSEN_INFO[selectedKlasse].maxPS + " PS" : "offen"}</div>
+              <span className="text-gray-500 text-sm">{liveT.klasse} · {KLASSEN_INFO[liveT.klasse]?.gruppe}</span>
+            </div>
+            <div className="flex items-baseline gap-4 mb-3">
+              {liveT.startnummer && (
+                <span className="text-[#b1e6a8] text-4xl font-black" style={{ fontFamily: "Arial Black, sans-serif" }}>
+                  #{liveT.startnummer}
+                </span>
               )}
+              <span className="text-white text-4xl font-black leading-tight" style={{ fontFamily: "Arial Black, sans-serif" }}>
+                {liveT.name}
+              </span>
             </div>
-            <div className="text-right">
-              <div className="text-gray-500 text-sm">Starter</div>
-              <div className="text-white text-2xl font-bold">{currentIdx + 1} / {klassenListe.length}</div>
+            <div className="flex flex-wrap gap-6 text-sm">
+              {liveT.hersteller && <div><span className="text-gray-500 block text-xs">Hersteller</span><span className="text-white font-bold">{liveT.hersteller}</span></div>}
+              {liveT.modell_nr  && <div><span className="text-gray-500 block text-xs">Modell</span><span className="text-white font-bold">{liveT.modell_nr}</span></div>}
+              {liveT.baujahr    && <div><span className="text-gray-500 block text-xs">Baujahr</span><span className="text-white font-bold">{liveT.baujahr}</span></div>}
+              {liveT.ps         && <div><span className="text-gray-500 block text-xs">PS</span><span className="text-white font-bold">{liveT.ps} PS</span></div>}
+              {liveT.kennzeichen && <div><span className="text-gray-500 block text-xs">Kennzeichen</span><span className="text-white font-bold">{liveT.kennzeichen}</span></div>}
             </div>
-          </div>
-
-          {/* Name */}
-          <div className="mb-4">
-            <div className="text-[#b1e6a8] text-5xl font-black leading-tight" style={{ fontFamily: "Arial Black, sans-serif" }}>
-              {current.name}
-            </div>
-            {current.startnummer && (
-              <div className="text-gray-400 text-lg mt-1">#{current.startnummer}</div>
-            )}
-          </div>
-
-          {/* Fahrzeug-Info */}
-          <div className="flex flex-wrap gap-6 mb-6 text-lg">
-            {current.hersteller && (
-              <div>
-                <span className="text-gray-500 text-sm block">Hersteller</span>
-                <span className="text-white font-bold">{current.hersteller}</span>
-              </div>
-            )}
-            {current.modell_nr && (
-              <div>
-                <span className="text-gray-500 text-sm block">Modell</span>
-                <span className="text-white font-bold">{current.modell_nr}</span>
-              </div>
-            )}
-            {current.baujahr && (
-              <div>
-                <span className="text-gray-500 text-sm block">Baujahr</span>
-                <span className="text-white font-bold">{current.baujahr}</span>
-              </div>
-            )}
-            {current.ps && (
-              <div>
-                <span className="text-gray-500 text-sm block">PS</span>
-                <span className="text-white font-bold">{current.ps} PS</span>
-              </div>
-            )}
-            {current.kennzeichen && (
-              <div>
-                <span className="text-gray-500 text-sm block">Kennzeichen</span>
-                <span className="text-white font-bold">{current.kennzeichen}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Ergebnis */}
-          {bestWeite !== null && bestWeite !== undefined ? (
-            <div className="bg-[#0a1a0a] border border-[#2a4a2a] rounded-xl p-4 inline-block">
-              <div className="text-gray-400 text-sm">Beste Weite</div>
-              <div className="text-[#b1e6a8] text-5xl font-black" style={{ fontFamily: "Arial Black, sans-serif" }}>
-                {fmWeite(bestWeite)}
-              </div>
-              {current.weite2 && current.weite && current.weite !== current.weite2 && (
-                <div className="text-gray-500 text-sm mt-1">
-                  1. {fmWeite(current.weite)} · 2. {fmWeite(current.weite2)}
+            {(liveT.weite || liveT.weite2) && (
+              <div className="mt-4 bg-[#0a1a0a] border border-[#2a4a2a] rounded-xl px-4 py-3 inline-block">
+                <div className="text-gray-400 text-xs mb-1">Beste Weite</div>
+                <div className="text-[#b1e6a8] text-3xl font-black" style={{ fontFamily: "Arial Black, sans-serif" }}>
+                  {fmWeite(Math.max(liveT.weite ?? 0, liveT.weite2 ?? 0))}
                 </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-gray-600 text-lg italic">Noch kein Ergebnis</div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Navigation */}
-      <div className="flex gap-4 justify-center">
-        <button
-          onClick={prev}
-          disabled={currentIdx === 0}
-          className="px-6 py-3 rounded-lg border border-[#333] text-white font-bold disabled:opacity-30 hover:border-[#b1e6a8] transition-colors"
-        >
-          ← Vorheriger
-        </button>
-        <button
-          onClick={next}
-          disabled={currentIdx >= klassenListe.length - 1}
-          className="px-6 py-3 rounded-lg bg-[#b1e6a8] text-black font-bold disabled:opacity-30 hover:bg-[#c5f0bc] transition-colors"
-        >
-          Nächster →
-        </button>
-      </div>
-
-      {/* Mini-Liste */}
-      <div className="border border-[#222] rounded-lg overflow-hidden">
-        <div className="bg-[#111] px-4 py-2 text-sm text-gray-400 border-b border-[#222]">
-          Startliste {selectedKlasse}
-        </div>
-        <div className="max-h-48 overflow-y-auto">
-          {klassenListe.map((t, i) => (
-            <div
-              key={t.id}
-              onClick={() => { setCurrentIdx(i); setShowResult(false); }}
-              className={`flex justify-between items-center px-4 py-2 cursor-pointer border-b border-[#1a1a1a] ${
-                i === currentIdx ? "bg-[#0f1a0f] border-l-2 border-l-[#b1e6a8]" : "hover:bg-[#111]"
-              }`}
-            >
-              <span className={`text-sm ${i === currentIdx ? "text-[#b1e6a8] font-bold" : "text-gray-300"}`}>
-                {t.name}
-              </span>
-              <span className="text-xs text-gray-500 font-mono">
-                {t.weite !== null ? fmWeite(t.weite) : "—"}
-              </span>
+      {/* Startliste nach Klassen */}
+      {klassenOrder.map(k => {
+        const liste = sorted.filter(t => t.klasse === k);
+        if (liste.length === 0) return null;
+        return (
+          <div key={k} className="border border-[#222] rounded-lg overflow-hidden">
+            <div className={`px-4 py-2 text-sm font-bold border-b border-[#222] flex items-center gap-2 ${
+              k === liveKlasse ? "bg-[#0f1a0f] text-[#b1e6a8]" : "bg-[#111] text-gray-400"
+            }`}>
+              {k === liveKlasse && <span className="text-[#b1e6a8] text-xs animate-pulse">●</span>}
+              {k} <span className="font-normal text-gray-500">{KLASSEN_INFO[k]?.gruppe}</span>
             </div>
-          ))}
-        </div>
-      </div>
+            {liste.map(t => {
+              const isLive = t.id === liveTeilnehmerId;
+              return (
+                <div
+                  key={t.id}
+                  className={`flex items-center px-4 py-2.5 border-b border-[#1a1a1a] ${
+                    isLive ? "bg-[#0f1a0f] border-l-4 border-l-[#b1e6a8]" : "bg-[#0a0a0a]"
+                  }`}
+                >
+                  {t.startnummer && (
+                    <span className="text-[#b1e6a8] font-bold text-sm w-10 shrink-0">#{t.startnummer}</span>
+                  )}
+                  <span className={`flex-1 text-sm ${isLive ? "text-[#b1e6a8] font-bold" : "text-gray-300"}`}>
+                    {t.name}
+                  </span>
+                  <span className="text-xs text-gray-600 font-mono mr-3">
+                    {t.weite != null ? fmWeite(t.weite) : "—"}
+                  </span>
+                  {isAdmin && (
+                    <button
+                      onClick={() => onSetLiveTeilnehmer(isLive ? null : t.id)}
+                      className={`text-xs px-2 py-1 rounded border transition-colors ${
+                        isLive
+                          ? "bg-[#b1e6a8] text-black border-[#b1e6a8] font-bold"
+                          : "border-[#333] text-gray-500 hover:border-[#b1e6a8] hover:text-[#b1e6a8]"
+                      }`}
+                    >
+                      {isLive ? "● Live" : "Live"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -887,11 +809,18 @@ const ADMIN_TABS = [
 export default function App() {
   const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem("ttt_admin") === "1");
   const [liveKlasse, setLiveKlasse] = useState(() => localStorage.getItem("ttt_live_klasse") || null);
+  const [liveTeilnehmerId, setLiveTeilnehmerId] = useState(() => localStorage.getItem("ttt_live_teilnehmer") || null);
 
   const handleSetLiveKlasse = (k) => {
     setLiveKlasse(k);
     if (k) localStorage.setItem("ttt_live_klasse", k);
     else localStorage.removeItem("ttt_live_klasse");
+  };
+
+  const handleSetLiveTeilnehmer = (id) => {
+    setLiveTeilnehmerId(id);
+    if (id) localStorage.setItem("ttt_live_teilnehmer", id);
+    else localStorage.removeItem("ttt_live_teilnehmer");
   };
   const [showPinModal, setShowPinModal] = useState(false);
   const TABS = isAdmin ? ADMIN_TABS : PUBLIC_TABS;
@@ -1081,7 +1010,7 @@ export default function App() {
           />
         )}
         {tab === "rangliste" && <RanglisteView teilnehmer={teilnehmer} liveKlasse={liveKlasse} onSetLiveKlasse={handleSetLiveKlasse} isAdmin={isAdmin} />}
-        {tab === "start" && <StartAnzeige teilnehmer={teilnehmer} liveKlasse={liveKlasse} />}
+        {tab === "start" && <StartAnzeige teilnehmer={teilnehmer} liveKlasse={liveKlasse} liveTeilnehmerId={liveTeilnehmerId} onSetLiveTeilnehmer={handleSetLiveTeilnehmer} isAdmin={isAdmin} />}
         {tab === "alle" && <AlleView teilnehmer={teilnehmer} onUpdate={handleUpdate} isAdmin={isAdmin} />}
       </main>
     </div>
