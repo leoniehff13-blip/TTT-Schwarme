@@ -534,12 +534,26 @@ function RanglisteView({ teilnehmer, liveKlasse, onSetLiveKlasse, isAdmin }) {
 
 // ─── View: Start-Anzeige ─────────────────────────────────────────────────────
 
-function StartAnzeige({ teilnehmer }) {
-  const [selectedKlasse, setSelectedKlasse] = useState("F9");
+function StartAnzeige({ teilnehmer, liveKlasse }) {
+  const [selectedKlasse, setSelectedKlasse] = useState(liveKlasse || "F9");
   const [currentIdx, setCurrentIdx] = useState(0);
   const [showResult, setShowResult] = useState(false);
 
-  const klassenListe = teilnehmer.filter(t => t.klasse === selectedKlasse);
+  // Wenn Admin Live-Klasse ändert, automatisch umschalten
+  useEffect(() => {
+    if (liveKlasse && liveKlasse !== selectedKlasse) {
+      setSelectedKlasse(liveKlasse);
+    }
+  }, [liveKlasse]);
+
+  // Nach Startnummer sortieren (Teilnehmer ohne Startnummer ans Ende)
+  const klassenListe = teilnehmer
+    .filter(t => t.klasse === selectedKlasse)
+    .sort((a, b) => {
+      const na = parseInt(a.startnummer) || 9999;
+      const nb = parseInt(b.startnummer) || 9999;
+      return na - nb;
+    });
   const current = klassenListe[currentIdx] || null;
 
   const prev = () => {
@@ -1067,7 +1081,7 @@ export default function App() {
           />
         )}
         {tab === "rangliste" && <RanglisteView teilnehmer={teilnehmer} liveKlasse={liveKlasse} onSetLiveKlasse={handleSetLiveKlasse} isAdmin={isAdmin} />}
-        {tab === "start" && <StartAnzeige teilnehmer={teilnehmer} />}
+        {tab === "start" && <StartAnzeige teilnehmer={teilnehmer} liveKlasse={liveKlasse} />}
         {tab === "alle" && <AlleView teilnehmer={teilnehmer} onUpdate={handleUpdate} isAdmin={isAdmin} />}
       </main>
     </div>
