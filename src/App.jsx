@@ -358,7 +358,7 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk, liveKlasse, l
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-[#111] border-b border-[#222]">
-              <th className="px-3 py-3 text-center text-[#b1e6a8] font-semibold w-24">Startnummer</th>
+              <th className="px-3 py-3 text-left text-[#b1e6a8] font-semibold w-24">Startnummer</th>
               <th className="px-3 py-3 text-left text-[#b1e6a8] font-semibold w-16">Live</th>
               <th className="px-3 py-3 text-left text-[#b1e6a8] font-semibold">Name</th>
               <th className="px-3 py-3 text-left text-[#b1e6a8] font-semibold hidden md:table-cell">Fahrzeug</th>
@@ -378,16 +378,16 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk, liveKlasse, l
                   i % 2 === 0 ? "bg-[#0a0a0a]" : "bg-[#0d0d0d]"
                 } hover:bg-[#141a14]`}
               >
-                <td className="px-3 py-2 text-center">
+                <td className="px-3 py-2">
                   <input
                     type="text"
                     value={t.startnummer || ""}
                     onChange={e => onUpdate({ ...t, startnummer: e.target.value })}
                     placeholder="—"
-                    className="w-12 bg-[#111] border border-[#333] rounded px-1 py-1 text-[#b1e6a8] font-bold text-center focus:border-[#b1e6a8] focus:outline-none text-sm"
+                    className="w-12 bg-[#111] border border-[#333] rounded px-1 py-1 text-[#b1e6a8] font-bold text-left focus:border-[#b1e6a8] focus:outline-none text-sm"
                   />
                 </td>
-                <td className="px-3 py-2 text-center">
+                <td className="px-3 py-2">
                   <button
                     onClick={() => onSetLiveTeilnehmer(t.id === liveTeilnehmerId ? null : t.id)}
                     className={`px-2 py-1 rounded text-xs font-bold border transition-colors ${
