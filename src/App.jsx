@@ -347,7 +347,13 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk }) {
                   </button>
                 </td>
                 <td className="px-3 py-2 text-center">
-                  <span className="text-[#b1e6a8] font-bold text-sm">{t.startnummer || "—"}</span>
+                  <input
+                    type="text"
+                    value={t.startnummer || ""}
+                    onChange={e => onUpdate({ ...t, startnummer: e.target.value })}
+                    placeholder="—"
+                    className="w-12 bg-[#111] border border-[#333] rounded px-1 py-1 text-[#b1e6a8] font-bold text-center focus:border-[#b1e6a8] focus:outline-none text-sm"
+                  />
                 </td>
                 <td className="px-3 py-2 text-white font-medium">{t.name}</td>
                 <td className="px-3 py-2 text-gray-300 hidden md:table-cell">
@@ -549,8 +555,30 @@ function StartAnzeige({ teilnehmer, liveKlasse, liveTeilnehmerId, onSetLiveTeiln
 
   const liveT = sorted.find(t => t.id === liveTeilnehmerId) || null;
 
+  const bezahlt = teilnehmer.filter(t => t.zahlung).length;
+  const mitWeite = teilnehmer.filter(t => t.weite !== null).length;
+
   return (
     <div className="flex flex-col gap-4">
+
+      {/* Stats */}
+      <div className="flex flex-wrap gap-6 px-1 text-center">
+        {[
+          { label: "Gesamt", value: teilnehmer.length, color: "text-white" },
+          { label: "Bezahlt", value: `${bezahlt}/${teilnehmer.length}`, color: "text-[#b1e6a8]" },
+          { label: "Ergebnisse", value: `${mitWeite}/${teilnehmer.length}`, color: "text-white" },
+          ...KLASSEN.map(k => ({
+            label: k,
+            value: teilnehmer.filter(t => t.klasse === k).length,
+            color: "text-gray-300"
+          }))
+        ].map(s => (
+          <div key={s.label} className="flex flex-col">
+            <span className={`text-lg font-bold ${s.color}`}>{s.value}</span>
+            <span className="text-xs text-gray-500">{s.label}</span>
+          </div>
+        ))}
+      </div>
 
       {/* Live-Anzeige (immer sichtbar, wenn jemand live ist) */}
       {liveT && (
@@ -803,7 +831,6 @@ const ADMIN_TABS = [
   { id: "teilnehmer", label: "Teilnehmer", icon: "🚜" },
   { id: "rangliste",  label: "Rangliste",  icon: "🏆" },
   { id: "start",      label: "Start-Anzeige", icon: "📺" },
-  { id: "alle",       label: "Alle Teilnehmer", icon: "📋" },
 ];
 
 export default function App() {
@@ -1011,7 +1038,6 @@ export default function App() {
         )}
         {tab === "rangliste" && <RanglisteView teilnehmer={teilnehmer} liveKlasse={liveKlasse} onSetLiveKlasse={handleSetLiveKlasse} isAdmin={isAdmin} />}
         {tab === "start" && <StartAnzeige teilnehmer={teilnehmer} liveKlasse={liveKlasse} liveTeilnehmerId={liveTeilnehmerId} onSetLiveTeilnehmer={handleSetLiveTeilnehmer} isAdmin={isAdmin} />}
-        {tab === "alle" && <AlleView teilnehmer={teilnehmer} onUpdate={handleUpdate} isAdmin={isAdmin} />}
       </main>
     </div>
   );
