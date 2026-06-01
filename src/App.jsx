@@ -670,7 +670,7 @@ function StartAnzeige({ teilnehmer, liveKlasse, liveTeilnehmerId }) {
             {/* Fahrender Trecker */}
             <div className="overflow-hidden mb-4" style={{ height: 72 }}>
               <img
-                src="/Dein Abschnittstext.jpeg"
+                src="/trecker.png"
                 alt="Trecker"
                 style={{
                   height: 72,
