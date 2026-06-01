@@ -955,6 +955,7 @@ export default function App() {
       <header className="border-b border-[#1a1a1a] bg-black sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <img src="/logo.jpg" alt="Trecker Treck Team Weser" className="h-10 w-auto rounded" />
             <div>
               <div className="text-[#b1e6a8] font-black text-xl leading-tight" style={{ fontFamily: "Arial Black, sans-serif" }}>
                 TRECKER TRECK
