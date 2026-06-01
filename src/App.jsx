@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import "./App.css";
 import { databases, ID, Query, DB_ID, COLLECTION_ID, SETTINGS_COL_ID } from "./lib/appwrite";
-import { INITIAL_TEILNEHMER, KLASSEN, KLASSEN_INFO } from "./data/initialData";
+import { INITIAL_TEILNEHMER, KLASSEN, KLASSEN_MIT_FAN, KLASSEN_INFO } from "./data/initialData";
 
 // ─── Appwrite helpers ───────────────────────────────────────────────────────
 
@@ -34,6 +34,7 @@ async function loadFromAppwrite() {
     weite2: doc.weite2,
     anmerkungen: doc.anmerkungen,
     startnummer: doc.startnummer,
+    fan_votes: doc.fan_votes ?? 0,
   }));
 }
 
@@ -44,7 +45,7 @@ async function saveToAppwrite(t) {
     kennzeichen: t.kennzeichen, modell_nr: t.modell_nr,
     hersteller: t.hersteller, baujahr: t.baujahr, ps: t.ps,
     weite: t.weite, weite2: t.weite2, anmerkungen: t.anmerkungen,
-    startnummer: t.startnummer,
+    startnummer: t.startnummer, fan_votes: t.fan_votes ?? 0,
   };
   return databases.createDocument(DB_ID, COLLECTION_ID, t.id, data);
 }
@@ -56,7 +57,7 @@ async function updateInAppwrite(t) {
     kennzeichen: t.kennzeichen, modell_nr: t.modell_nr,
     hersteller: t.hersteller, baujahr: t.baujahr, ps: t.ps,
     weite: t.weite, weite2: t.weite2, anmerkungen: t.anmerkungen,
-    startnummer: t.startnummer,
+    startnummer: t.startnummer, fan_votes: t.fan_votes ?? 0,
   };
   return databases.updateDocument(DB_ID, COLLECTION_ID, t.id, data);
 }
@@ -456,6 +457,56 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk, liveKlasse, l
 function RanglisteView({ teilnehmer, liveKlasse, onSetLiveKlasse, isAdmin }) {
   const [selectedKlasse, setSelectedKlasse] = useState("ALL");
 
+  const renderFanKlasse = () => {
+    const sorted = [...teilnehmer]
+      .filter(t => (t.fan_votes ?? 0) > 0)
+      .sort((a, b) => (b.fan_votes ?? 0) - (a.fan_votes ?? 0));
+    const total = teilnehmer.reduce((s, t) => s + (t.fan_votes ?? 0), 0);
+    return (
+      <div key="FAN" className="mb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <span className="text-[#b1e6a8] font-bold text-lg">❤️ FAN</span>
+          <span className="text-gray-500 text-sm">Fan-Abstimmung</span>
+          <span className="text-gray-600 text-xs">größte Fan-Gruppe</span>
+          {total > 0 && <span className="ml-auto text-[#b1e6a8] text-xs">{total} Stimmen</span>}
+        </div>
+        {sorted.length === 0 ? (
+          <div className="text-gray-600 text-sm italic px-3 py-2 bg-[#0a0a0a] rounded-lg border border-[#1a1a1a]">
+            Noch keine Stimmen abgegeben
+          </div>
+        ) : (
+          <div className="rounded-lg border border-[#222] overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-[#111] border-b border-[#222]">
+                  <th className="px-3 py-2 text-left text-gray-500 w-10">#</th>
+                  <th className="px-3 py-2 text-left text-gray-400">Name</th>
+                  <th className="px-3 py-2 text-left text-gray-400 hidden sm:table-cell">Klasse</th>
+                  <th className="px-3 py-2 text-right text-gray-400">Stimmen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sorted.map((t, i) => (
+                  <tr key={t.id} className={`border-b border-[#1a1a1a] ${i === 0 ? "bg-[#0f1a0f]" : i % 2 === 0 ? "bg-[#0a0a0a]" : "bg-[#0d0d0d]"}`}>
+                    <td className="px-3 py-2 text-center">
+                      {i < 3 ? <span className="text-base">{MEDAL[i]}</span> : <span className="text-gray-500">{i + 1}</span>}
+                    </td>
+                    <td className="px-3 py-2 text-white font-medium">
+                      {t.startnummer && <span className="text-[#b1e6a8] font-bold mr-2 text-xs">#{t.startnummer}</span>}
+                      {t.name}
+                    </td>
+                    <td className="px-3 py-2 text-gray-500 hidden sm:table-cell">{t.klasse}</td>
+                    <td className="px-3 py-2 text-right font-bold text-[#b1e6a8]">{t.fan_votes ?? 0} ❤️</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderKlasse = (k, isLive = false) => {
     const allMembers = teilnehmer
       .filter(t => t.klasse === k)
@@ -575,9 +626,20 @@ function RanglisteView({ teilnehmer, liveKlasse, onSetLiveKlasse, isAdmin }) {
         {KLASSEN.map(k => (
           <KlasseChip key={k} k={k} active={selectedKlasse === k} onClick={() => setSelectedKlasse(k)} />
         ))}
+        <button
+          onClick={() => setSelectedKlasse("FAN")}
+          className={`px-3 py-1 rounded-full text-sm font-bold border transition-all ${
+            selectedKlasse === "FAN"
+              ? "bg-pink-400 text-black border-pink-400"
+              : "bg-[#1a1a1a] text-gray-300 border-[#333] hover:border-pink-400"
+          }`}
+        >
+          ❤️ FAN
+        </button>
       </div>
 
       {klassesToShow.map(k => renderKlasse(k, k === liveKlasse))}
+      {(selectedKlasse === "ALL" || selectedKlasse === "FAN") && renderFanKlasse()}
     </div>
   );
 }
@@ -836,6 +898,101 @@ function CountdownScreen({ onAdminClick }) {
   );
 }
 
+// ─── Fan Voting ──────────────────────────────────────────────────────────────
+
+function FanVoting({ teilnehmer, onVote }) {
+  const [votedId, setVotedId] = useState(() => localStorage.getItem("ttt_fan_vote") || null);
+  const [search, setSearch] = useState("");
+
+  const handleVote = (t) => {
+    if (votedId) return; // bereits gevoted
+    onVote(t);
+    setVotedId(t.id);
+    localStorage.setItem("ttt_fan_vote", t.id);
+  };
+
+  const sorted = [...teilnehmer].sort((a, b) => (b.fan_votes ?? 0) - (a.fan_votes ?? 0));
+  const filtered = sorted.filter(t =>
+    search === "" ||
+    t.name.toLowerCase().includes(search.toLowerCase()) ||
+    t.klasse.toLowerCase().includes(search.toLowerCase())
+  );
+  const votedFor = teilnehmer.find(t => t.id === votedId);
+  const maxVotes = Math.max(...teilnehmer.map(t => t.fan_votes ?? 0), 1);
+
+  return (
+    <div>
+      {/* Voted Banner */}
+      {votedFor ? (
+        <div className="mb-6 bg-[#0f1a0f] border border-[#b1e6a8] rounded-xl px-5 py-4 flex items-center gap-3">
+          <span className="text-2xl">❤️</span>
+          <div>
+            <div className="text-[#b1e6a8] font-bold">Du hast für <span className="text-white">{votedFor.name}</span> gevoted!</div>
+            <div className="text-gray-500 text-xs mt-0.5">Klasse {votedFor.klasse} · {votedFor.fan_votes ?? 0} Stimmen</div>
+          </div>
+        </div>
+      ) : (
+        <div className="mb-6 bg-[#0d0d0d] border border-[#333] rounded-xl px-5 py-4 text-gray-400 text-sm">
+          ❤️ Wähle deinen Favoriten — du hast <strong className="text-white">eine Stimme</strong>
+        </div>
+      )}
+
+      {/* Suche */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Name oder Klasse suchen..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="bg-[#111] border border-[#333] rounded px-3 py-2 text-white w-full max-w-sm focus:border-[#b1e6a8] focus:outline-none text-sm"
+        />
+      </div>
+
+      {/* Liste */}
+      <div className="flex flex-col gap-2">
+        {filtered.map((t, i) => {
+          const isVoted = t.id === votedId;
+          const votes = t.fan_votes ?? 0;
+          const barWidth = maxVotes > 0 ? (votes / maxVotes) * 100 : 0;
+          return (
+            <div
+              key={t.id}
+              className={`relative rounded-xl border px-4 py-3 flex items-center gap-3 overflow-hidden transition-all ${
+                isVoted
+                  ? "border-[#b1e6a8] bg-[#0f1a0f]"
+                  : votedId
+                  ? "border-[#1a1a1a] bg-[#0a0a0a] opacity-70"
+                  : "border-[#222] bg-[#0a0a0a] hover:border-[#b1e6a8] cursor-pointer"
+              }`}
+              onClick={() => !votedId && handleVote(t)}
+            >
+              {/* Vote-Bar Hintergrund */}
+              <div
+                className="absolute left-0 top-0 bottom-0 bg-[#b1e6a8] opacity-5 transition-all"
+                style={{ width: `${barWidth}%` }}
+              />
+              <div className="relative flex items-center gap-3 flex-1 min-w-0">
+                <span className="text-gray-600 text-sm w-5 shrink-0">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <div className={`font-bold truncate ${isVoted ? "text-[#b1e6a8]" : "text-white"}`}>
+                    {t.name}
+                    {t.startnummer && <span className="text-gray-500 font-normal ml-2 text-xs">#{t.startnummer}</span>}
+                  </div>
+                  <div className="text-xs text-gray-500">{t.klasse} · {[t.hersteller, t.modell_nr].filter(Boolean).join(" ")}</div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={`font-bold text-sm ${votes > 0 ? "text-[#b1e6a8]" : "text-gray-600"}`}>{votes}</span>
+                  <span className="text-lg">{isVoted ? "❤️" : votedId ? "🤍" : "🤍"}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── PIN Login Modal ─────────────────────────────────────────────────────────
 
 const ADMIN_PIN = "202612345";
@@ -895,12 +1052,14 @@ function PinModal({ onSuccess, onClose }) {
 const PUBLIC_TABS = [
   { id: "rangliste",  label: "Rangliste",  icon: "🏆" },
   { id: "start",      label: "Start-Anzeige", icon: "📺" },
+  { id: "fan",        label: "Fan-Vote",   icon: "❤️" },
 ];
 
 const ADMIN_TABS = [
   { id: "teilnehmer", label: "Teilnehmer", icon: "🚜" },
   { id: "rangliste",  label: "Rangliste",  icon: "🏆" },
   { id: "start",      label: "Start-Anzeige", icon: "📺" },
+  { id: "fan",        label: "Fan-Vote",   icon: "❤️" },
 ];
 
 export default function App() {
@@ -922,6 +1081,18 @@ export default function App() {
     const interval = setInterval(poll, 3000);
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
+
+  const handleVote = useCallback(async (t) => {
+    const updated = { ...t, fan_votes: (t.fan_votes ?? 0) + 1 };
+    setTeilnehmer(prev => {
+      const next = prev.map(p => p.id === t.id ? updated : p);
+      saveLocal(next);
+      return next;
+    });
+    if (appwriteOk) {
+      try { await updateInAppwrite(updated); } catch {}
+    }
+  }, [appwriteOk]);
 
   const handleSetLiveKlasse = async (k) => {
     setLiveKlasse(k);
@@ -1148,6 +1319,7 @@ export default function App() {
           />
         )}
         {tab === "rangliste" && <RanglisteView teilnehmer={teilnehmer} liveKlasse={liveKlasse} onSetLiveKlasse={handleSetLiveKlasse} isAdmin={isAdmin} />}
+        {tab === "fan" && <FanVoting teilnehmer={teilnehmer} onVote={handleVote} />}
         {tab === "start" && <StartAnzeige teilnehmer={teilnehmer} liveKlasse={liveKlasse} liveTeilnehmerId={liveTeilnehmerId} />}
       </main>
     </div>
