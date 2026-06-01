@@ -900,15 +900,32 @@ function CountdownScreen({ onAdminClick }) {
 
 // ─── Fan Voting ──────────────────────────────────────────────────────────────
 
-function FanVoting({ teilnehmer, onVote }) {
+function FanVoting({ teilnehmer, onVote, onUnvote }) {
   const [votedId, setVotedId] = useState(() => localStorage.getItem("ttt_fan_vote") || null);
   const [search, setSearch] = useState("");
 
   const handleVote = (t) => {
-    if (votedId) return; // bereits gevoted
+    if (votedId) return;
     onVote(t);
     setVotedId(t.id);
     localStorage.setItem("ttt_fan_vote", t.id);
+  };
+
+  const handleChangeVote = (newT) => {
+    // Alte Stimme entfernen
+    const oldT = teilnehmer.find(t => t.id === votedId);
+    if (oldT) onUnvote(oldT);
+    // Neue Stimme setzen
+    onVote(newT);
+    setVotedId(newT.id);
+    localStorage.setItem("ttt_fan_vote", newT.id);
+  };
+
+  const handleRemoveVote = () => {
+    const oldT = teilnehmer.find(t => t.id === votedId);
+    if (oldT) onUnvote(oldT);
+    setVotedId(null);
+    localStorage.removeItem("ttt_fan_vote");
   };
 
   const sorted = [...teilnehmer].sort((a, b) => (b.fan_votes ?? 0) - (a.fan_votes ?? 0));
@@ -926,10 +943,16 @@ function FanVoting({ teilnehmer, onVote }) {
       {votedFor ? (
         <div className="mb-6 bg-[#0f1a0f] border border-[#b1e6a8] rounded-xl px-5 py-4 flex items-center gap-3">
           <span className="text-2xl">❤️</span>
-          <div>
+          <div className="flex-1">
             <div className="text-[#b1e6a8] font-bold">Du hast für <span className="text-white">{votedFor.name}</span> gevoted!</div>
             <div className="text-gray-500 text-xs mt-0.5">Klasse {votedFor.klasse} · {votedFor.fan_votes ?? 0} Stimmen</div>
           </div>
+          <button
+            onClick={handleRemoveVote}
+            className="text-xs text-gray-500 hover:text-white border border-[#333] hover:border-[#555] px-3 py-1 rounded-full transition-colors"
+          >
+            Stimme ändern
+          </button>
         </div>
       ) : (
         <div className="mb-6 bg-[#0d0d0d] border border-[#333] rounded-xl px-5 py-4 text-gray-400 text-sm">
@@ -961,10 +984,10 @@ function FanVoting({ teilnehmer, onVote }) {
                 isVoted
                   ? "border-[#b1e6a8] bg-[#0f1a0f]"
                   : votedId
-                  ? "border-[#1a1a1a] bg-[#0a0a0a] opacity-70"
+                  ? "border-[#1a1a1a] bg-[#0a0a0a] hover:border-[#b1e6a8] cursor-pointer"
                   : "border-[#222] bg-[#0a0a0a] hover:border-[#b1e6a8] cursor-pointer"
               }`}
-              onClick={() => !votedId && handleVote(t)}
+              onClick={() => votedId && !isVoted ? handleChangeVote(t) : !votedId ? handleVote(t) : undefined}
             >
               {/* Vote-Bar Hintergrund */}
               <div
@@ -1092,6 +1115,18 @@ export default function App() {
 
   const handleVote = useCallback(async (t) => {
     const updated = { ...t, fan_votes: (t.fan_votes ?? 0) + 1 };
+    setTeilnehmer(prev => {
+      const next = prev.map(p => p.id === t.id ? updated : p);
+      saveLocal(next);
+      return next;
+    });
+    if (appwriteOk) {
+      try { await updateInAppwrite(updated); } catch {}
+    }
+  }, [appwriteOk]);
+
+  const handleUnvote = useCallback(async (t) => {
+    const updated = { ...t, fan_votes: Math.max(0, (t.fan_votes ?? 0) - 1) };
     setTeilnehmer(prev => {
       const next = prev.map(p => p.id === t.id ? updated : p);
       saveLocal(next);
@@ -1320,7 +1355,7 @@ export default function App() {
           />
         )}
         {tab === "rangliste" && <RanglisteView teilnehmer={teilnehmer} liveKlasse={liveKlasse} onSetLiveKlasse={handleSetLiveKlasse} isAdmin={isAdmin} />}
-        {tab === "fan" && <FanVoting teilnehmer={teilnehmer} onVote={handleVote} />}
+        {tab === "fan" && <FanVoting teilnehmer={teilnehmer} onVote={handleVote} onUnvote={handleUnvote} />}
         {tab === "start" && <StartAnzeige teilnehmer={teilnehmer} liveKlasse={liveKlasse} liveTeilnehmerId={liveTeilnehmerId} />}
       </main>
     </div>
