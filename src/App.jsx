@@ -776,6 +776,66 @@ function AlleView({ teilnehmer, onUpdate, isAdmin }) {
   );
 }
 
+// ─── Countdown ───────────────────────────────────────────────────────────────
+
+const EVENT_START = new Date("2026-06-07T09:00:00");
+
+function useCountdown() {
+  const [remaining, setRemaining] = useState(() => EVENT_START - Date.now());
+  useEffect(() => {
+    const iv = setInterval(() => setRemaining(EVENT_START - Date.now()), 1000);
+    return () => clearInterval(iv);
+  }, []);
+  return remaining;
+}
+
+function CountdownScreen({ onAdminClick }) {
+  const remaining = useCountdown();
+  const total = Math.max(0, remaining);
+  const days    = Math.floor(total / 86400000);
+  const hours   = Math.floor((total % 86400000) / 3600000);
+  const minutes = Math.floor((total % 3600000) / 60000);
+  const seconds = Math.floor((total % 60000) / 1000);
+
+  const pad = n => String(n).padStart(2, "0");
+
+  return (
+    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-4" style={{ fontFamily: "Arial, sans-serif" }}>
+      <img src="/logo.jpg" alt="Trecker Treck Team Weser" className="h-24 w-auto rounded mb-8" />
+      <div className="text-[#b1e6a8] font-black text-2xl mb-2 tracking-widest" style={{ fontFamily: "Arial Black, sans-serif" }}>
+        TRECKER TRECK SCHWARME 2026
+      </div>
+      <div className="text-gray-400 text-sm mb-10">Die Veranstaltung startet am 07.06.2026 um 09:00 Uhr</div>
+
+      <div className="flex gap-4 sm:gap-8 mb-12">
+        {[
+          { label: "Tage",    value: days },
+          { label: "Stunden", value: hours },
+          { label: "Minuten", value: minutes },
+          { label: "Sekunden",value: seconds },
+        ].map(({ label, value }) => (
+          <div key={label} className="flex flex-col items-center">
+            <div
+              className="text-[#b1e6a8] font-black text-5xl sm:text-7xl leading-none w-20 sm:w-28 text-center border border-[#222] rounded-xl bg-[#0a0a0a] py-3"
+              style={{ fontFamily: "Arial Black, sans-serif" }}
+            >
+              {pad(value)}
+            </div>
+            <div className="text-gray-500 text-xs mt-2 uppercase tracking-wider">{label}</div>
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={onAdminClick}
+        className="text-gray-700 text-xs hover:text-gray-400 transition-colors"
+      >
+        🔒 Admin
+      </button>
+    </div>
+  );
+}
+
 // ─── PIN Login Modal ─────────────────────────────────────────────────────────
 
 const ADMIN_PIN = "202612345";
@@ -964,11 +1024,34 @@ export default function App() {
     if (!validTabs.includes(tab)) setTab(TABS[0].id);
   }, [isAdmin]);
 
+  const remaining = useCountdown();
+  const eventStarted = remaining <= 0;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-[#b1e6a8] text-2xl animate-pulse">Laden...</div>
       </div>
+    );
+  }
+
+  // Viewer sieht Countdown bis zum Event
+  if (!isAdmin && !eventStarted) {
+    return (
+      <>
+        <CountdownScreen onAdminClick={() => setShowPinModal(true)} />
+        {showPinModal && (
+          <PinModal
+            onSuccess={() => {
+              sessionStorage.setItem("ttt_admin", "1");
+              setIsAdmin(true);
+              setTab("teilnehmer");
+              setShowPinModal(false);
+            }}
+            onClose={() => setShowPinModal(false)}
+          />
+        )}
+      </>
     );
   }
 
