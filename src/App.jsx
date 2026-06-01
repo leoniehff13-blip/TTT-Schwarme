@@ -403,93 +403,111 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk }) {
 
 // ─── View: Rangliste ─────────────────────────────────────────────────────────
 
-function RanglisteView({ teilnehmer }) {
+function RanglisteView({ teilnehmer, liveKlasse, onSetLiveKlasse, isAdmin }) {
   const [selectedKlasse, setSelectedKlasse] = useState("ALL");
-  const [showAll, setShowAll] = useState(false);
 
-  const renderKlasse = (k) => {
-    const members = teilnehmer
+  const renderKlasse = (k, isLive = false) => {
+    const allMembers = teilnehmer
       .filter(t => t.klasse === k)
       .map(t => ({ ...t, bestWeite: Math.max(t.weite ?? 0, t.weite2 ?? 0) || null }))
-      .sort((a, b) => {
-        if (b.bestWeite && !a.bestWeite) return 1;
-        if (a.bestWeite && !b.bestWeite) return -1;
-        return (b.bestWeite ?? 0) - (a.bestWeite ?? 0);
-      });
+      .sort((a, b) => (b.bestWeite ?? 0) - (a.bestWeite ?? 0));
 
-    if (members.length === 0) return null;
-    const hasResults = members.some(m => m.bestWeite);
+    // Nur Teilnehmer mit Ergebnis anzeigen
+    const members = allMembers.filter(t => t.bestWeite);
+
+    if (allMembers.length === 0) return null;
 
     return (
-      <div key={k} className="mb-6">
+      <div key={k} className={`mb-6 ${isLive ? "ring-2 ring-[#b1e6a8] rounded-xl p-3" : ""}`}>
         <div className="flex items-center gap-3 mb-2">
+          {isLive && (
+            <span className="flex items-center gap-1 bg-[#b1e6a8] text-black text-xs font-black px-2 py-0.5 rounded-full animate-pulse">
+              ● LIVE
+            </span>
+          )}
           <span className="text-[#b1e6a8] font-bold text-lg">{k}</span>
           <span className="text-gray-500 text-sm">{KLASSEN_INFO[k]?.gruppe}</span>
-          <span className="text-gray-600 text-xs">{members.length} Teilnehmer</span>
-          {hasResults && (
+          <span className="text-gray-600 text-xs">{members.length}/{allMembers.length} Ergebnisse</span>
+          {members.length > 0 && (
             <span className="ml-auto text-[#b1e6a8] text-xs">
               Spitze: {fmWeite(members[0].bestWeite)}
             </span>
           )}
+          {isAdmin && (
+            <button
+              onClick={() => onSetLiveKlasse(liveKlasse === k ? null : k)}
+              className={`ml-2 px-2 py-0.5 rounded text-xs border transition-colors ${
+                liveKlasse === k
+                  ? "bg-[#b1e6a8] text-black border-[#b1e6a8]"
+                  : "border-[#333] text-gray-500 hover:border-[#b1e6a8] hover:text-[#b1e6a8]"
+              }`}
+            >
+              {liveKlasse === k ? "Live ✓" : "Als Live setzen"}
+            </button>
+          )}
         </div>
-        <div className="rounded-lg border border-[#222] overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-[#111] border-b border-[#222]">
-                <th className="px-3 py-2 text-left text-gray-500 w-10">#</th>
-                <th className="px-3 py-2 text-left text-gray-400">Name</th>
-                <th className="px-3 py-2 text-left text-gray-400 hidden sm:table-cell">Fahrzeug</th>
-                <th className="px-3 py-2 text-right text-gray-400">Weite</th>
-                <th className="px-3 py-2 text-right text-gray-400 hidden sm:table-cell">2. Weite</th>
-              </tr>
-            </thead>
-            <tbody>
-              {members.map((t, i) => (
-                <tr
-                  key={t.id}
-                  className={`border-b border-[#1a1a1a] ${
-                    i === 0 && t.bestWeite ? "bg-[#0f1a0f]" :
-                    i % 2 === 0 ? "bg-[#0a0a0a]" : "bg-[#0d0d0d]"
-                  }`}
-                >
-                  <td className="px-3 py-2 text-center">
-                    {t.bestWeite ? (
-                      i < 3 ? (
+        {members.length === 0 ? (
+          <div className="text-gray-600 text-sm italic px-3 py-2 bg-[#0a0a0a] rounded-lg border border-[#1a1a1a]">
+            Noch keine Ergebnisse eingetragen
+          </div>
+        ) : (
+          <div className="rounded-lg border border-[#222] overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-[#111] border-b border-[#222]">
+                  <th className="px-3 py-2 text-left text-gray-500 w-10">#</th>
+                  <th className="px-3 py-2 text-left text-gray-400">Name</th>
+                  <th className="px-3 py-2 text-left text-gray-400 hidden sm:table-cell">Fahrzeug</th>
+                  <th className="px-3 py-2 text-right text-gray-400">Weite</th>
+                  <th className="px-3 py-2 text-right text-gray-400 hidden sm:table-cell">2. Weite</th>
+                </tr>
+              </thead>
+              <tbody>
+                {members.map((t, i) => (
+                  <tr
+                    key={t.id}
+                    className={`border-b border-[#1a1a1a] ${
+                      i === 0 ? "bg-[#0f1a0f]" :
+                      i % 2 === 0 ? "bg-[#0a0a0a]" : "bg-[#0d0d0d]"
+                    }`}
+                  >
+                    <td className="px-3 py-2 text-center">
+                      {i < 3 ? (
                         <span className="text-base">{MEDAL[i]}</span>
                       ) : (
                         <span className="text-gray-500">{i + 1}</span>
-                      )
-                    ) : (
-                      <span className="text-gray-700">—</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-white font-medium">
-                    {t.startnummer && (
-                      <span className="text-[#b1e6a8] font-bold mr-2 text-xs">#{t.startnummer}</span>
-                    )}
-                    {t.name}
-                  </td>
-                  <td className="px-3 py-2 text-gray-400 hidden sm:table-cell">
-                    {[t.hersteller, t.modell_nr].filter(Boolean).join(" ")}
-                  </td>
-                  <td className={`px-3 py-2 text-right font-mono font-bold ${
-                    i === 0 && t.bestWeite ? "text-[#b1e6a8]" : "text-white"
-                  }`}>
-                    {fmWeite(t.weite)}
-                  </td>
-                  <td className="px-3 py-2 text-right font-mono text-gray-400 hidden sm:table-cell">
-                    {fmWeite(t.weite2)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-white font-medium">
+                      {t.startnummer && (
+                        <span className="text-[#b1e6a8] font-bold mr-2 text-xs">#{t.startnummer}</span>
+                      )}
+                      {t.name}
+                    </td>
+                    <td className="px-3 py-2 text-gray-400 hidden sm:table-cell">
+                      {[t.hersteller, t.modell_nr].filter(Boolean).join(" ")}
+                    </td>
+                    <td className={`px-3 py-2 text-right font-mono font-bold ${
+                      i === 0 ? "text-[#b1e6a8]" : "text-white"
+                    }`}>
+                      {fmWeite(t.weite)}
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono text-gray-400 hidden sm:table-cell">
+                      {fmWeite(t.weite2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     );
   };
 
-  const klassesToShow = selectedKlasse === "ALL" ? KLASSEN : [selectedKlasse];
+  const klassesToShow = selectedKlasse === "ALL"
+    ? [liveKlasse, ...KLASSEN.filter(k => k !== liveKlasse)].filter(Boolean)
+    : [selectedKlasse];
 
   return (
     <div>
@@ -509,7 +527,7 @@ function RanglisteView({ teilnehmer }) {
         ))}
       </div>
 
-      {klassesToShow.map(k => renderKlasse(k))}
+      {klassesToShow.map(k => renderKlasse(k, k === liveKlasse))}
     </div>
   );
 }
@@ -854,6 +872,13 @@ const ADMIN_TABS = [
 
 export default function App() {
   const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem("ttt_admin") === "1");
+  const [liveKlasse, setLiveKlasse] = useState(() => localStorage.getItem("ttt_live_klasse") || null);
+
+  const handleSetLiveKlasse = (k) => {
+    setLiveKlasse(k);
+    if (k) localStorage.setItem("ttt_live_klasse", k);
+    else localStorage.removeItem("ttt_live_klasse");
+  };
   const [showPinModal, setShowPinModal] = useState(false);
   const TABS = isAdmin ? ADMIN_TABS : PUBLIC_TABS;
   const [tab, setTab] = useState(isAdmin ? "teilnehmer" : "rangliste");
@@ -1041,7 +1066,7 @@ export default function App() {
             appwriteOk={appwriteOk}
           />
         )}
-        {tab === "rangliste" && <RanglisteView teilnehmer={teilnehmer} />}
+        {tab === "rangliste" && <RanglisteView teilnehmer={teilnehmer} liveKlasse={liveKlasse} onSetLiveKlasse={handleSetLiveKlasse} isAdmin={isAdmin} />}
         {tab === "start" && <StartAnzeige teilnehmer={teilnehmer} />}
         {tab === "alle" && <AlleView teilnehmer={teilnehmer} onUpdate={handleUpdate} isAdmin={isAdmin} />}
       </main>
