@@ -269,7 +269,7 @@ function NeuerTeilnehmerModal({ defaultKlasse, onSave, onClose }) {
 
 // ─── View: Teilnehmer ────────────────────────────────────────────────────────
 
-function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk }) {
+function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk, liveKlasse, liveTeilnehmerId, onSetLiveKlasse, onSetLiveTeilnehmer }) {
   const [selectedKlasse, setSelectedKlasse] = useState("F9");
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -283,22 +283,41 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk }) {
   const gesamt = teilnehmer.filter(t => t.klasse === selectedKlasse).length;
   const mitWeite = teilnehmer.filter(t => t.klasse === selectedKlasse && t.weite !== null).length;
 
+  const handleKlasseClick = (k) => {
+    setSelectedKlasse(k);
+    onSetLiveKlasse(k);
+  };
+
   return (
     <div>
-      {/* Klassen-Filter */}
-      <div className="mb-6">
-        <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Fahrzeugklassen</div>
-        <div className="flex flex-wrap gap-2 mb-3">
-          {KLASSEN.filter(k => KLASSEN_INFO[k]?.gruppe === "Fahrzeug").map(k => (
-            <KlasseChip key={k} k={k} active={selectedKlasse === k} onClick={() => setSelectedKlasse(k)} />
-          ))}
-        </div>
-        <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Schlepperklassen</div>
+      {/* Klassen-Filter — Klick setzt gleichzeitig Live-Klasse */}
+      <div className="mb-4">
         <div className="flex flex-wrap gap-2">
-          {KLASSEN.filter(k => KLASSEN_INFO[k]?.gruppe === "Schlepper").map(k => (
-            <KlasseChip key={k} k={k} active={selectedKlasse === k} onClick={() => setSelectedKlasse(k)} />
-          ))}
+          {KLASSEN.map(k => {
+            const isLive = k === liveKlasse;
+            return (
+              <button
+                key={k}
+                onClick={() => handleKlasseClick(k)}
+                className={`px-3 py-1 rounded-full text-sm font-bold border transition-all relative ${
+                  selectedKlasse === k
+                    ? "bg-[#b1e6a8] text-black border-[#b1e6a8]"
+                    : "bg-[#1a1a1a] text-gray-300 border-[#333] hover:border-[#b1e6a8]"
+                }`}
+              >
+                {k}
+                {isLive && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#b1e6a8] rounded-full animate-pulse" />
+                )}
+              </button>
+            );
+          })}
         </div>
+        {liveKlasse && (
+          <div className="mt-2 text-xs text-[#b1e6a8] flex items-center gap-1">
+            <span className="animate-pulse">●</span> Klasse <strong>{liveKlasse}</strong> ist live
+          </div>
+        )}
       </div>
 
       {/* Stats bar */}
@@ -341,6 +360,7 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk }) {
             <tr className="bg-[#111] border-b border-[#222]">
               <th className="px-3 py-3 text-left text-[#b1e6a8] font-semibold w-8">✓</th>
               <th className="px-3 py-3 text-center text-[#b1e6a8] font-semibold w-16">#</th>
+              <th className="px-3 py-3 text-left text-[#b1e6a8] font-semibold w-16">Live</th>
               <th className="px-3 py-3 text-left text-[#b1e6a8] font-semibold">Name</th>
               <th className="px-3 py-3 text-left text-[#b1e6a8] font-semibold hidden md:table-cell">Fahrzeug</th>
               <th className="px-3 py-3 text-left text-[#b1e6a8] font-semibold hidden lg:table-cell">Kennzeichen</th>
@@ -355,6 +375,7 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk }) {
               <tr
                 key={t.id}
                 className={`border-b border-[#1a1a1a] transition-colors ${
+                  t.id === liveTeilnehmerId ? "bg-[#0f1a0f] border-l-4 border-l-[#b1e6a8]" :
                   i % 2 === 0 ? "bg-[#0a0a0a]" : "bg-[#0d0d0d]"
                 } hover:bg-[#141a14]`}
               >
@@ -379,6 +400,18 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk }) {
                     placeholder="—"
                     className="w-12 bg-[#111] border border-[#333] rounded px-1 py-1 text-[#b1e6a8] font-bold text-center focus:border-[#b1e6a8] focus:outline-none text-sm"
                   />
+                </td>
+                <td className="px-3 py-2 text-center">
+                  <button
+                    onClick={() => onSetLiveTeilnehmer(t.id === liveTeilnehmerId ? null : t.id)}
+                    className={`px-2 py-1 rounded text-xs font-bold border transition-colors ${
+                      t.id === liveTeilnehmerId
+                        ? "bg-[#b1e6a8] text-black border-[#b1e6a8] animate-pulse"
+                        : "border-[#333] text-gray-500 hover:border-[#b1e6a8] hover:text-[#b1e6a8]"
+                    }`}
+                  >
+                    {t.id === liveTeilnehmerId ? "● Live" : "Live"}
+                  </button>
                 </td>
                 <td className="px-3 py-2 text-white font-medium">{t.name}</td>
                 <td className="px-3 py-2 text-gray-300 hidden md:table-cell">
@@ -414,7 +447,7 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk }) {
             ))}
             {klasse_list.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
                   Keine Teilnehmer gefunden
                 </td>
               </tr>
@@ -565,7 +598,7 @@ function RanglisteView({ teilnehmer, liveKlasse, onSetLiveKlasse, isAdmin }) {
 
 // ─── View: Start-Anzeige ─────────────────────────────────────────────────────
 
-function StartAnzeige({ teilnehmer, liveKlasse, liveTeilnehmerId, onSetLiveTeilnehmer, isAdmin }) {
+function StartAnzeige({ teilnehmer, liveKlasse, liveTeilnehmerId }) {
   // Klassen in der richtigen Reihenfolge: Live-Klasse zuerst
   const klassenOrder = liveKlasse
     ? [liveKlasse, ...KLASSEN.filter(k => k !== liveKlasse)]
@@ -656,18 +689,6 @@ function StartAnzeige({ teilnehmer, liveKlasse, liveTeilnehmerId, onSetLiveTeiln
                   <span className="text-xs text-gray-600 font-mono mr-3">
                     {t.weite != null ? fmWeite(t.weite) : "—"}
                   </span>
-                  {isAdmin && (
-                    <button
-                      onClick={() => onSetLiveTeilnehmer(isLive ? null : t.id)}
-                      className={`text-xs px-2 py-1 rounded border transition-colors ${
-                        isLive
-                          ? "bg-[#b1e6a8] text-black border-[#b1e6a8] font-bold"
-                          : "border-[#333] text-gray-500 hover:border-[#b1e6a8] hover:text-[#b1e6a8]"
-                      }`}
-                    >
-                      {isLive ? "● Live" : "Live"}
-                    </button>
-                  )}
                 </div>
               );
             })}
@@ -1051,10 +1072,14 @@ export default function App() {
             onUpdate={handleUpdate}
             onAdd={handleAdd}
             appwriteOk={appwriteOk}
+            liveKlasse={liveKlasse}
+            liveTeilnehmerId={liveTeilnehmerId}
+            onSetLiveKlasse={handleSetLiveKlasse}
+            onSetLiveTeilnehmer={handleSetLiveTeilnehmer}
           />
         )}
         {tab === "rangliste" && <RanglisteView teilnehmer={teilnehmer} liveKlasse={liveKlasse} onSetLiveKlasse={handleSetLiveKlasse} isAdmin={isAdmin} />}
-        {tab === "start" && <StartAnzeige teilnehmer={teilnehmer} liveKlasse={liveKlasse} liveTeilnehmerId={liveTeilnehmerId} onSetLiveTeilnehmer={handleSetLiveTeilnehmer} isAdmin={isAdmin} />}
+        {tab === "start" && <StartAnzeige teilnehmer={teilnehmer} liveKlasse={liveKlasse} liveTeilnehmerId={liveTeilnehmerId} />}
       </main>
     </div>
   );
