@@ -315,6 +315,7 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk }) {
           <thead>
             <tr className="bg-[#111] border-b border-[#222]">
               <th className="px-3 py-3 text-left text-[#b1e6a8] font-semibold w-8">✓</th>
+              <th className="px-3 py-3 text-center text-[#b1e6a8] font-semibold w-16">#</th>
               <th className="px-3 py-3 text-left text-[#b1e6a8] font-semibold">Name</th>
               <th className="px-3 py-3 text-left text-[#b1e6a8] font-semibold hidden md:table-cell">Fahrzeug</th>
               <th className="px-3 py-3 text-left text-[#b1e6a8] font-semibold hidden lg:table-cell">Kennzeichen</th>
@@ -344,6 +345,15 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk }) {
                   >
                     {t.zahlung && <span className="text-xs font-bold">✓</span>}
                   </button>
+                </td>
+                <td className="px-3 py-2 text-center">
+                  <input
+                    type="text"
+                    value={t.startnummer || ""}
+                    onChange={e => onUpdate({ ...t, startnummer: e.target.value })}
+                    placeholder="—"
+                    className="w-12 bg-[#111] border border-[#333] rounded px-1 py-1 text-[#b1e6a8] font-bold text-center focus:border-[#b1e6a8] focus:outline-none text-sm"
+                  />
                 </td>
                 <td className="px-3 py-2 text-white font-medium">{t.name}</td>
                 <td className="px-3 py-2 text-gray-300 hidden md:table-cell">
@@ -387,6 +397,7 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk }) {
           </tbody>
         </table>
       </div>
+      <p className="mt-2 text-xs text-gray-600">Startnummer direkt in der Tabelle unter # eintragen</p>
 
       {!appwriteOk && (
         <div className="mt-4 text-xs text-yellow-500 bg-yellow-900/20 border border-yellow-900 rounded px-3 py-2">
@@ -459,7 +470,12 @@ function RanglisteView({ teilnehmer }) {
                       <span className="text-gray-700">—</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-white font-medium">{t.name}</td>
+                  <td className="px-3 py-2 text-white font-medium">
+                    {t.startnummer && (
+                      <span className="text-[#b1e6a8] font-bold mr-2 text-xs">#{t.startnummer}</span>
+                    )}
+                    {t.name}
+                  </td>
                   <td className="px-3 py-2 text-gray-400 hidden sm:table-cell">
                     {[t.hersteller, t.modell_nr].filter(Boolean).join(" ")}
                   </td>
