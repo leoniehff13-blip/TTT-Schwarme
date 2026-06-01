@@ -762,9 +762,68 @@ function AlleView({ teilnehmer }) {
   );
 }
 
+// ─── PIN Login Modal ─────────────────────────────────────────────────────────
+
+const ADMIN_PIN = "202612345";
+
+function PinModal({ onSuccess, onClose }) {
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (pin === ADMIN_PIN) {
+      onSuccess();
+    } else {
+      setError(true);
+      setPin("");
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-[#0d0d0d] border border-[#333] rounded-2xl w-full max-w-sm p-8"
+        onClick={e => e.stopPropagation()}
+      >
+        <h2 className="text-[#b1e6a8] font-black text-xl mb-1">🔒 Admin-Zugang</h2>
+        <p className="text-gray-500 text-sm mb-6">PIN eingeben für vollständigen Zugriff</p>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <input
+            type="password"
+            value={pin}
+            onChange={e => { setPin(e.target.value); setError(false); }}
+            placeholder="PIN"
+            autoFocus
+            className={`bg-[#0a0a0a] border rounded px-4 py-3 text-white text-center text-xl tracking-widest focus:outline-none ${
+              error ? "border-red-500" : "border-[#333] focus:border-[#b1e6a8]"
+            }`}
+          />
+          {error && <p className="text-red-400 text-sm text-center">Falscher PIN</p>}
+          <div className="flex gap-3">
+            <button type="button" onClick={onClose}
+              className="flex-1 px-4 py-2 rounded-lg border border-[#333] text-gray-300 hover:border-[#555]">
+              Abbrechen
+            </button>
+            <button type="submit"
+              className="flex-1 px-4 py-2 rounded-lg bg-[#b1e6a8] text-black font-bold hover:bg-[#c5f0bc]">
+              Einloggen
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main App ────────────────────────────────────────────────────────────────
 
-const TABS = [
+const PUBLIC_TABS = [
+  { id: "rangliste",  label: "Rangliste",  icon: "🏆" },
+  { id: "start",      label: "Start-Anzeige", icon: "📺" },
+];
+
+const ADMIN_TABS = [
   { id: "teilnehmer", label: "Teilnehmer", icon: "🚜" },
   { id: "rangliste",  label: "Rangliste",  icon: "🏆" },
   { id: "start",      label: "Start-Anzeige", icon: "📺" },
@@ -772,7 +831,10 @@ const TABS = [
 ];
 
 export default function App() {
-  const [tab, setTab] = useState("teilnehmer");
+  const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem("ttt_admin") === "1");
+  const [showPinModal, setShowPinModal] = useState(false);
+  const TABS = isAdmin ? ADMIN_TABS : PUBLIC_TABS;
+  const [tab, setTab] = useState(isAdmin ? "teilnehmer" : "rangliste");
   const [teilnehmer, setTeilnehmer] = useState([]);
   const [loading, setLoading] = useState(true);
   const [appwriteOk, setAppwriteOk] = useState(false);
@@ -856,6 +918,12 @@ export default function App() {
     alert(`${ok} Teilnehmer in Appwrite gespeichert!`);
   };
 
+  // If tab is not available in current mode, reset it
+  useEffect(() => {
+    const validTabs = TABS.map(t => t.id);
+    if (!validTabs.includes(tab)) setTab(TABS[0].id);
+  }, [isAdmin]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -874,7 +942,7 @@ export default function App() {
               <div className="text-[#b1e6a8] font-black text-xl leading-tight" style={{ fontFamily: "Arial Black, sans-serif" }}>
                 TRECKER TRECK
               </div>
-              <div className="text-white text-xs tracking-widest">SCHWARME 2025</div>
+              <div className="text-white text-xs tracking-widest">SCHWARME 2026</div>
             </div>
           </div>
           <div className="flex items-center gap-3 text-xs">
@@ -882,12 +950,29 @@ export default function App() {
             <span className={`px-2 py-1 rounded text-xs ${appwriteOk ? "bg-green-900 text-green-300" : "bg-gray-900 text-gray-500"}`}>
               {appwriteOk ? "☁ Appwrite" : "💾 Lokal"}
             </span>
-            {!appwriteOk && teilnehmer.length > 0 && (
+            {!appwriteOk && teilnehmer.length > 0 && isAdmin && (
               <button
                 onClick={handleImportToAppwrite}
                 className="px-2 py-1 bg-[#1a2a1a] border border-[#2a4a2a] text-[#b1e6a8] rounded text-xs hover:bg-[#2a3a2a] transition-colors"
               >
                 → Appwrite importieren
+              </button>
+            )}
+            {isAdmin ? (
+              <button
+                onClick={() => { sessionStorage.removeItem("ttt_admin"); setIsAdmin(false); setTab("rangliste"); }}
+                className="px-2 py-1 bg-[#1a1a1a] border border-[#333] text-gray-400 rounded text-xs hover:text-white transition-colors"
+                title="Abmelden"
+              >
+                🔓 Abmelden
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowPinModal(true)}
+                className="px-2 py-1 bg-[#1a1a1a] border border-[#333] text-gray-400 rounded text-xs hover:text-white transition-colors"
+                title="Admin-Login"
+              >
+                🔒
               </button>
             )}
           </div>
@@ -912,9 +997,21 @@ export default function App() {
         </div>
       </header>
 
+      {showPinModal && (
+        <PinModal
+          onSuccess={() => {
+            sessionStorage.setItem("ttt_admin", "1");
+            setIsAdmin(true);
+            setTab("teilnehmer");
+            setShowPinModal(false);
+          }}
+          onClose={() => setShowPinModal(false)}
+        />
+      )}
+
       {/* Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
-        {tab === "teilnehmer" && (
+        {tab === "teilnehmer" && isAdmin && (
           <TeilnehmerView
             teilnehmer={teilnehmer}
             onUpdate={handleUpdate}
