@@ -347,13 +347,7 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk }) {
                   </button>
                 </td>
                 <td className="px-3 py-2 text-center">
-                  <input
-                    type="text"
-                    value={t.startnummer || ""}
-                    onChange={e => onUpdate({ ...t, startnummer: e.target.value })}
-                    placeholder="—"
-                    className="w-12 bg-[#111] border border-[#333] rounded px-1 py-1 text-[#b1e6a8] font-bold text-center focus:border-[#b1e6a8] focus:outline-none text-sm"
-                  />
+                  <span className="text-[#b1e6a8] font-bold text-sm">{t.startnummer || "—"}</span>
                 </td>
                 <td className="px-3 py-2 text-white font-medium">{t.name}</td>
                 <td className="px-3 py-2 text-gray-300 hidden md:table-cell">
@@ -397,7 +391,6 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk }) {
           </tbody>
         </table>
       </div>
-      <p className="mt-2 text-xs text-gray-600">Startnummer direkt in der Tabelle unter # eintragen</p>
 
       {!appwriteOk && (
         <div className="mt-4 text-xs text-yellow-500 bg-yellow-900/20 border border-yellow-900 rounded px-3 py-2">
