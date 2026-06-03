@@ -147,28 +147,49 @@ function WeiteInput({ value, onChange, placeholder }) {
   );
 }
 
-// ─── Modal: Neuer Teilnehmer ─────────────────────────────────────────────────
+// ─── Modal: Fahrerdaten ───────────────────────────────────────────────────────
 
 const EMPTY_FORM = {
   klasse: "F9", zahlung: false, name: "", mail: "", nummer: "",
   adresse: "", kennzeichen: "", modell_nr: "", hersteller: "",
   baujahr: "", ps: "", anmerkungen: "", startnummer: "",
-  weite: null, weite2: null,
+  weite: null, weite2: null, fan_votes: 0,
 };
 
-function NeuerTeilnehmerModal({ defaultKlasse, onSave, onClose }) {
-  const [form, setForm] = useState({ ...EMPTY_FORM, klasse: defaultKlasse });
+function FahrerdatenModal({ teilnehmer, onSave, onUpdate, onClose }) {
+  const [selectedId, setSelectedId] = useState(null);
+  const [isNew, setIsNew] = useState(false);
+  const [form, setForm] = useState({ ...EMPTY_FORM });
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
+
+  const selectTeilnehmer = (t) => {
+    setSelectedId(t.id);
+    setIsNew(false);
+    setForm({ ...t });
+  };
+
+  const startNew = () => {
+    setSelectedId(null);
+    setIsNew(true);
+    setForm({ ...EMPTY_FORM });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) return;
     setSaving(true);
-    await onSave({ ...form, id: crypto.randomUUID() });
+    if (isNew) {
+      await onSave({ ...form, id: crypto.randomUUID() });
+    } else {
+      await onUpdate({ ...form });
+    }
     setSaving(false);
-    onClose();
+    setSelectedId(null);
+    setIsNew(false);
+    setForm({ ...EMPTY_FORM });
   };
 
   const field = (label, key, opts = {}) => (
@@ -176,7 +197,7 @@ function NeuerTeilnehmerModal({ defaultKlasse, onSave, onClose }) {
       <label className="text-xs text-gray-500 uppercase tracking-wider">{label}</label>
       <input
         type={opts.type || "text"}
-        value={form[key]}
+        value={form[key] ?? ""}
         onChange={e => set(key, e.target.value)}
         placeholder={opts.placeholder || ""}
         required={opts.required}
@@ -185,84 +206,153 @@ function NeuerTeilnehmerModal({ defaultKlasse, onSave, onClose }) {
     </div>
   );
 
+  const filtered = teilnehmer.filter(t =>
+    search === "" ||
+    t.name.toLowerCase().includes(search.toLowerCase()) ||
+    t.klasse.toLowerCase().includes(search.toLowerCase())
+  ).sort((a, b) => {
+    if (a.klasse < b.klasse) return -1;
+    if (a.klasse > b.klasse) return 1;
+    return a.name.localeCompare(b.name, "de");
+  });
+
+  const showForm = isNew || selectedId !== null;
+
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="bg-[#0d0d0d] border border-[#333] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        className="bg-[#0d0d0d] border border-[#333] rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#222]">
-          <h2 className="text-[#b1e6a8] font-black text-xl">+ Neuer Teilnehmer</h2>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#222] shrink-0">
+          <h2 className="text-[#b1e6a8] font-black text-xl">✏️ Fahrerdaten ändern</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-white text-2xl leading-none">×</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Klasse */}
-          <div className="flex flex-col gap-1 sm:col-span-2">
-            <label className="text-xs text-gray-500 uppercase tracking-wider">Klasse</label>
-            <div className="flex flex-wrap gap-2">
-              {KLASSEN.map(k => (
+        <div className="flex flex-1 overflow-hidden">
+          {/* Linke Spalte: Teilnehmerliste */}
+          <div className="w-64 shrink-0 border-r border-[#222] flex flex-col">
+            <div className="p-3 border-b border-[#222]">
+              <input
+                type="text"
+                placeholder="Suchen..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="bg-[#111] border border-[#333] rounded px-2 py-1.5 text-white w-full focus:border-[#b1e6a8] focus:outline-none text-xs"
+              />
+            </div>
+            <div className="overflow-y-auto flex-1">
+              <button
+                onClick={startNew}
+                className={`w-full text-left px-4 py-2.5 text-sm border-b border-[#1a1a1a] transition-colors ${
+                  isNew ? "bg-[#0f1a0f] text-[#b1e6a8] font-bold" : "text-gray-400 hover:bg-[#111] hover:text-white"
+                }`}
+              >
+                + Neuer Teilnehmer
+              </button>
+              {filtered.map(t => (
                 <button
-                  key={k} type="button"
-                  onClick={() => set("klasse", k)}
-                  className={`px-3 py-1 rounded-full text-sm font-bold border transition-all ${
-                    form.klasse === k
-                      ? "bg-[#b1e6a8] text-black border-[#b1e6a8]"
-                      : "bg-[#1a1a1a] text-gray-300 border-[#333] hover:border-[#b1e6a8]"
+                  key={t.id}
+                  onClick={() => selectTeilnehmer(t)}
+                  className={`w-full text-left px-4 py-2.5 border-b border-[#1a1a1a] transition-colors ${
+                    selectedId === t.id ? "bg-[#0f1a0f] text-[#b1e6a8]" : "text-gray-300 hover:bg-[#111] hover:text-white"
                   }`}
-                >{k}</button>
+                >
+                  <div className="text-xs font-bold truncate">{t.name}</div>
+                  <div className="text-xs text-gray-600">{t.klasse}</div>
+                </button>
               ))}
             </div>
           </div>
 
-          {field("Name *", "name", { required: true, placeholder: "Vor- und Nachname" })}
-          {field("Startnummer", "startnummer", { placeholder: "z.B. 42" })}
-          {field("E-Mail", "mail", { type: "email", placeholder: "name@example.de" })}
-          {field("Telefon", "nummer", { placeholder: "0171 ..." })}
-          {field("Adresse", "adresse", { placeholder: "Straße, PLZ Ort" })}
-          {field("Kennzeichen", "kennzeichen", { placeholder: "VER-XX 123" })}
-          {field("Hersteller", "hersteller", { placeholder: "Fendt, IHC, Deutz ..." })}
-          {field("Modell / Nr.", "modell_nr", { placeholder: "936, Farmer 311 ..." })}
-          {field("Baujahr", "baujahr", { placeholder: "1985" })}
-          {field("PS", "ps", { placeholder: "120" })}
+          {/* Rechte Spalte: Formular */}
+          <div className="flex-1 overflow-y-auto">
+            {!showForm ? (
+              <div className="flex items-center justify-center h-full text-gray-600 text-sm">
+                Teilnehmer auswählen oder neu anlegen
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2 text-[#b1e6a8] font-bold text-sm">
+                  {isNew ? "Neuer Teilnehmer" : `Bearbeiten: ${form.name}`}
+                </div>
 
-          {/* Zahlung */}
-          <div className="flex items-center gap-3 sm:col-span-2">
-            <button
-              type="button"
-              onClick={() => set("zahlung", !form.zahlung)}
-              className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
-                form.zahlung ? "bg-[#b1e6a8] border-[#b1e6a8] text-black" : "border-[#444]"
-              }`}
-            >
-              {form.zahlung && <span className="text-xs font-bold">✓</span>}
-            </button>
-            <span className="text-gray-300 text-sm">Startgebühr bezahlt</span>
-          </div>
+                {/* Klasse */}
+                <div className="flex flex-col gap-1 sm:col-span-2">
+                  <label className="text-xs text-gray-500 uppercase tracking-wider">Klasse</label>
+                  <div className="flex flex-wrap gap-2">
+                    {KLASSEN.map(k => (
+                      <button key={k} type="button" onClick={() => set("klasse", k)}
+                        className={`px-3 py-1 rounded-full text-sm font-bold border transition-all ${
+                          form.klasse === k ? "bg-[#b1e6a8] text-black border-[#b1e6a8]" : "bg-[#1a1a1a] text-gray-300 border-[#333] hover:border-[#b1e6a8]"
+                        }`}>{k}</button>
+                    ))}
+                  </div>
+                </div>
 
-          {/* Anmerkungen */}
-          <div className="flex flex-col gap-1 sm:col-span-2">
-            <label className="text-xs text-gray-500 uppercase tracking-wider">Anmerkungen</label>
-            <textarea
-              value={form.anmerkungen}
-              onChange={e => set("anmerkungen", e.target.value)}
-              rows={2}
-              className="bg-[#0a0a0a] border border-[#333] rounded px-3 py-2 text-white focus:border-[#b1e6a8] focus:outline-none text-sm resize-none"
-            />
-          </div>
+                {field("Name *", "name", { required: true, placeholder: "Vor- und Nachname" })}
+                {field("E-Mail", "mail", { type: "email", placeholder: "name@example.de" })}
+                {field("Telefon", "nummer", { placeholder: "0171 ..." })}
+                {field("Adresse", "adresse", { placeholder: "Straße, PLZ Ort" })}
+                {field("Kennzeichen", "kennzeichen", { placeholder: "VER-XX 123" })}
+                {field("Hersteller", "hersteller", { placeholder: "Fendt, IHC, Deutz ..." })}
+                {field("Modell / Nr.", "modell_nr", { placeholder: "936, Farmer 311 ..." })}
+                {field("Baujahr", "baujahr", { placeholder: "1985" })}
+                {field("PS", "ps", { placeholder: "120" })}
 
-          {/* Buttons */}
-          <div className="sm:col-span-2 flex gap-3 justify-end pt-2">
-            <button type="button" onClick={onClose}
-              className="px-5 py-2 rounded-lg border border-[#333] text-gray-300 hover:border-[#555] transition-colors">
-              Abbrechen
-            </button>
-            <button type="submit" disabled={saving || !form.name.trim()}
-              className="px-6 py-2 rounded-lg bg-[#b1e6a8] text-black font-bold disabled:opacity-40 hover:bg-[#c5f0bc] transition-colors">
-              {saving ? "Speichert..." : "Teilnehmer anlegen"}
-            </button>
+                {/* Weiten */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-gray-500 uppercase tracking-wider">1. Weite (m)</label>
+                  <input type="number" step="0.01" min="0"
+                    value={form.weite ?? ""}
+                    onChange={e => set("weite", e.target.value === "" ? null : parseFloat(e.target.value))}
+                    className="bg-[#0a0a0a] border border-[#333] rounded px-3 py-2 text-white focus:border-[#b1e6a8] focus:outline-none text-sm"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-gray-500 uppercase tracking-wider">2. Weite (m)</label>
+                  <input type="number" step="0.01" min="0"
+                    value={form.weite2 ?? ""}
+                    onChange={e => set("weite2", e.target.value === "" ? null : parseFloat(e.target.value))}
+                    className="bg-[#0a0a0a] border border-[#333] rounded px-3 py-2 text-white focus:border-[#b1e6a8] focus:outline-none text-sm"
+                  />
+                </div>
+
+                {/* Zahlung */}
+                <div className="flex items-center gap-3 sm:col-span-2">
+                  <button type="button" onClick={() => set("zahlung", !form.zahlung)}
+                    className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+                      form.zahlung ? "bg-[#b1e6a8] border-[#b1e6a8] text-black" : "border-[#444]"
+                    }`}>
+                    {form.zahlung && <span className="text-xs font-bold">✓</span>}
+                  </button>
+                  <span className="text-gray-300 text-sm">Startgebühr bezahlt</span>
+                </div>
+
+                {/* Anmerkungen */}
+                <div className="flex flex-col gap-1 sm:col-span-2">
+                  <label className="text-xs text-gray-500 uppercase tracking-wider">Anmerkungen</label>
+                  <textarea value={form.anmerkungen} onChange={e => set("anmerkungen", e.target.value)}
+                    rows={2}
+                    className="bg-[#0a0a0a] border border-[#333] rounded px-3 py-2 text-white focus:border-[#b1e6a8] focus:outline-none text-sm resize-none"
+                  />
+                </div>
+
+                <div className="sm:col-span-2 flex gap-3 justify-end pt-2">
+                  <button type="button" onClick={() => { setSelectedId(null); setIsNew(false); }}
+                    className="px-5 py-2 rounded-lg border border-[#333] text-gray-300 hover:border-[#555] transition-colors text-sm">
+                    Abbrechen
+                  </button>
+                  <button type="submit" disabled={saving || !form.name.trim()}
+                    className="px-6 py-2 rounded-lg bg-[#b1e6a8] text-black font-bold disabled:opacity-40 hover:bg-[#c5f0bc] transition-colors text-sm">
+                    {saving ? "Speichert..." : isNew ? "Anlegen" : "Speichern"}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
@@ -270,10 +360,9 @@ function NeuerTeilnehmerModal({ defaultKlasse, onSave, onClose }) {
 
 // ─── View: Teilnehmer ────────────────────────────────────────────────────────
 
-function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk, liveKlasse, liveTeilnehmerId, onSetLiveKlasse, onSetLiveTeilnehmer }) {
+function TeilnehmerView({ teilnehmer, onUpdate, appwriteOk, liveKlasse, liveTeilnehmerId, onSetLiveKlasse, onSetLiveTeilnehmer }) {
   const [selectedKlasse, setSelectedKlasse] = useState("F9");
   const [search, setSearch] = useState("");
-  const [showModal, setShowModal] = useState(false);
 
   const klasse_list = teilnehmer.filter(
     t => t.klasse === selectedKlasse &&
@@ -327,21 +416,7 @@ function TeilnehmerView({ teilnehmer, onUpdate, onAdd, appwriteOk, liveKlasse, l
         <span className="text-gray-400">Teilnehmer: <span className="text-white font-bold">{gesamt}</span></span>
         <span className="text-gray-400">Bezahlt: <span className="text-[#b1e6a8] font-bold">{bezahlt}/{gesamt}</span></span>
         <span className="text-gray-400">Ergebnisse: <span className="text-white font-bold">{mitWeite}/{gesamt}</span></span>
-        <button
-          onClick={() => setShowModal(true)}
-          className="ml-auto px-4 py-1.5 bg-[#b1e6a8] text-black font-bold rounded-lg text-sm hover:bg-[#c5f0bc] transition-colors"
-        >
-          + Neuer Teilnehmer
-        </button>
       </div>
-
-      {showModal && (
-        <NeuerTeilnehmerModal
-          defaultKlasse={selectedKlasse}
-          onSave={onAdd}
-          onClose={() => setShowModal(false)}
-        />
-      )}
 
       {/* Search */}
       <div className="mb-4">
@@ -1126,6 +1201,7 @@ const ADMIN_TABS = [
 export default function App() {
   const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem("ttt_admin") === "1");
   const [previewMode, setPreviewMode] = useState(false);
+  const [showFahrerdaten, setShowFahrerdaten] = useState(false);
   const [liveKlasse, setLiveKlasse] = useState(null);
   const [liveTeilnehmerId, setLiveTeilnehmerId] = useState(null);
 
@@ -1325,6 +1401,12 @@ export default function App() {
             {isAdmin ? (
               <>
                 <button
+                  onClick={() => setShowFahrerdaten(true)}
+                  className="px-2 py-1 bg-[#1a1a1a] border border-[#333] text-gray-400 rounded text-xs hover:text-white hover:border-[#b1e6a8] transition-colors"
+                >
+                  ✏️ Fahrerdaten
+                </button>
+                <button
                   onClick={() => setPreviewMode(p => !p)}
                   className={`px-2 py-1 border rounded text-xs transition-colors ${previewMode ? "bg-[#b1e6a8] text-black border-[#b1e6a8]" : "bg-[#1a1a1a] border-[#333] text-gray-400 hover:text-white"}`}
                   title="Viewer-Ansicht"
@@ -1388,12 +1470,19 @@ export default function App() {
           <TeilnehmerView
             teilnehmer={teilnehmer}
             onUpdate={handleUpdate}
-            onAdd={handleAdd}
             appwriteOk={appwriteOk}
             liveKlasse={liveKlasse}
             liveTeilnehmerId={liveTeilnehmerId}
             onSetLiveKlasse={handleSetLiveKlasse}
             onSetLiveTeilnehmer={handleSetLiveTeilnehmer}
+          />
+        )}
+        {showFahrerdaten && (
+          <FahrerdatenModal
+            teilnehmer={teilnehmer}
+            onSave={handleAdd}
+            onUpdate={handleUpdate}
+            onClose={() => setShowFahrerdaten(false)}
           />
         )}
         {tab === "rangliste" && <RanglisteView teilnehmer={teilnehmer} liveKlasse={liveKlasse} />}
