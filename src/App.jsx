@@ -156,7 +156,7 @@ const EMPTY_FORM = {
   weite: null, weite2: null, fan_votes: 0,
 };
 
-function FahrerdatenModal({ teilnehmer, onSave, onUpdate, onClose }) {
+function FahrerdatenModal({ teilnehmer, onSave, onUpdate, onDelete, onClose }) {
   const [selectedId, setSelectedId] = useState(null);
   const [isNew, setIsNew] = useState(false);
   const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -340,6 +340,20 @@ function FahrerdatenModal({ teilnehmer, onSave, onUpdate, onClose }) {
                 </div>
 
                 <div className="sm:col-span-2 flex gap-3 justify-end pt-2">
+                  {!isNew && (
+                    <button type="button"
+                      onClick={() => {
+                        if (window.confirm(`"${form.name}" wirklich löschen?`)) {
+                          onDelete(form);
+                          setSelectedId(null);
+                          setIsNew(false);
+                          setForm({ ...EMPTY_FORM });
+                        }
+                      }}
+                      className="px-4 py-2 rounded-lg border border-red-800 text-red-500 hover:bg-red-900/30 transition-colors text-sm mr-auto">
+                      🗑 Löschen
+                    </button>
+                  )}
                   <button type="button" onClick={() => { setSelectedId(null); setIsNew(false); }}
                     className="px-5 py-2 rounded-lg border border-[#333] text-gray-300 hover:border-[#555] transition-colors text-sm">
                     Abbrechen
@@ -585,11 +599,20 @@ function RanglisteView({ teilnehmer, liveKlasse }) {
   const renderKlasse = (k, isLive = false) => {
     const allMembers = teilnehmer
       .filter(t => t.klasse === k)
-      .map(t => ({ ...t, bestWeite: Math.max(t.weite ?? 0, t.weite2 ?? 0) || null }))
-      .sort((a, b) => (b.bestWeite ?? 0) - (a.bestWeite ?? 0));
+      .sort((a, b) => {
+        const a2 = a.weite2 ?? null;
+        const b2 = b.weite2 ?? null;
+        // Beide haben 2. Weite → nach 2. Weite sortieren
+        if (a2 !== null && b2 !== null) return b2 - a2;
+        // Nur einer hat 2. Weite → der gewinnt
+        if (a2 !== null) return -1;
+        if (b2 !== null) return 1;
+        // Keiner hat 2. Weite → nach 1. Weite sortieren
+        return (b.weite ?? 0) - (a.weite ?? 0);
+      });
 
-    // Nur Teilnehmer mit Ergebnis anzeigen
-    const members = allMembers.filter(t => t.bestWeite);
+    // Nur Teilnehmer mit Ergebnis anzeigen (mind. 1. Weite)
+    const members = allMembers.filter(t => t.weite != null);
 
     if (allMembers.length === 0) return null;
 
@@ -606,7 +629,7 @@ function RanglisteView({ teilnehmer, liveKlasse }) {
           <span className="text-gray-600 text-xs">{members.length}/{allMembers.length} Ergebnisse</span>
           {members.length > 0 && (
             <span className="ml-auto text-[#b1e6a8] text-xs">
-              Spitze: {fmWeite(members[0].bestWeite)}
+              Spitze: {fmWeite(members[0].weite2 ?? members[0].weite)}
             </span>
           )}
         </div>
@@ -1252,6 +1275,17 @@ export default function App() {
     }
   }, [appwriteOk]);
 
+  const handleDelete = useCallback(async (t) => {
+    setTeilnehmer(prev => {
+      const next = prev.filter(p => p.id !== t.id);
+      saveLocal(next);
+      return next;
+    });
+    if (appwriteOk) {
+      try { await databases.deleteDocument(DB_ID, COLLECTION_ID, t.id); } catch {}
+    }
+  }, [appwriteOk]);
+
   const handleSetLiveKlasse = async (k) => {
     setLiveKlasse(k);
     await saveLiveState(k, liveTeilnehmerId);
@@ -1482,6 +1516,7 @@ export default function App() {
             teilnehmer={teilnehmer}
             onSave={handleAdd}
             onUpdate={handleUpdate}
+            onDelete={handleDelete}
             onClose={() => setShowFahrerdaten(false)}
           />
         )}
