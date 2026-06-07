@@ -389,7 +389,6 @@ function TeilnehmerView({ teilnehmer, onUpdate, appwriteOk, liveKlasse, liveTeil
 
   const handleKlasseClick = (k) => {
     setSelectedKlasse(k);
-    onSetLiveKlasse(k);
   };
 
   return (
