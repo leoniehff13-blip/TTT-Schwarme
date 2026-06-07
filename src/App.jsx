@@ -1256,6 +1256,22 @@ export default function App() {
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
+  // Teilnehmerdaten alle 5s neu laden (für alle Geräte)
+  useEffect(() => {
+    let cancelled = false;
+    const pollData = async () => {
+      try {
+        const docs = await loadFromAppwrite();
+        if (!cancelled && docs.length > 0) {
+          setTeilnehmer(docs);
+          saveLocal(docs);
+        }
+      } catch {}
+    };
+    const interval = setInterval(pollData, 5000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
+
   const [showPinModal, setShowPinModal] = useState(false);
   const TABS = (isAdmin && !previewMode) ? ADMIN_TABS : PUBLIC_TABS;
   const [tab, setTab] = useState(isAdmin ? "teilnehmer" : "rangliste");
