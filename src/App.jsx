@@ -820,12 +820,22 @@ function StartAnzeige({ teilnehmer, liveKlasse, liveTeilnehmerId }) {
               {liveT.ps         && <div><span className="text-gray-500 block text-xs">PS</span><span className="text-white font-bold">{liveT.ps} PS</span></div>}
               {liveT.kennzeichen && <div><span className="text-gray-500 block text-xs">Kennzeichen</span><span className="text-white font-bold">{liveT.kennzeichen}</span></div>}
             </div>
-            {(liveT.weite || liveT.weite2) && (
-              <div className="mt-4 bg-[#0a1a0a] border border-[#2a4a2a] rounded-xl px-4 py-3 inline-block">
-                <div className="text-gray-400 text-xs mb-1">Beste Weite</div>
-                <div className="text-[#b1e6a8] text-3xl font-black" style={{ fontFamily: "Arial Black, sans-serif" }}>
-                  {fmWeite(Math.max(liveT.weite ?? 0, liveT.weite2 ?? 0))}
+            {liveT.weite != null && (
+              <div className="mt-4 flex gap-3 flex-wrap">
+                <div className="bg-[#0a1a0a] border border-[#2a4a2a] rounded-xl px-4 py-3 inline-block">
+                  <div className="text-gray-400 text-xs mb-1">1. Weite</div>
+                  <div className="text-[#b1e6a8] text-3xl font-black" style={{ fontFamily: "Arial Black, sans-serif" }}>
+                    {fmWeite(liveT.weite)}
+                  </div>
                 </div>
+                {liveT.weite2 != null && (
+                  <div className="bg-red-950 border border-red-700 rounded-xl px-4 py-3 inline-block">
+                    <div className="text-red-400 text-xs mb-1">⚡ Stechen</div>
+                    <div className="text-white text-3xl font-black" style={{ fontFamily: "Arial Black, sans-serif" }}>
+                      {fmWeite(liveT.weite2)}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
