@@ -490,8 +490,7 @@ function TeilnehmerView({ teilnehmer, onUpdate, appwriteOk, liveKlasse, liveTeil
                   <button
                     onClick={() => {
                       const newId = t.id === liveTeilnehmerId ? null : t.id;
-                      onSetLiveTeilnehmer(newId);
-                      if (newId) onSetLiveKlasse(t.klasse);
+                      onSetLiveTeilnehmer(newId, newId ? t.klasse : undefined);
                     }}
                     className={`px-2 py-1 rounded text-xs font-bold border transition-colors ${
                       t.id === liveTeilnehmerId
@@ -1345,9 +1344,12 @@ export default function App() {
     await saveLiveState(k, liveTeilnehmerId);
   };
 
-  const handleSetLiveTeilnehmer = async (id) => {
+  const handleSetLiveTeilnehmer = async (id, klasse) => {
+    // klasse optional — wenn mitgegeben, beide atomisch speichern
+    const newKlasse = klasse ?? liveKlasse;
     setLiveTeilnehmerId(id);
-    await saveLiveState(liveKlasse, id);
+    if (klasse) setLiveKlasse(klasse);
+    await saveLiveState(newKlasse, id);
   };
 
   // Load data on startup
