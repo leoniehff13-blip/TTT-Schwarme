@@ -393,26 +393,36 @@ function TeilnehmerView({ teilnehmer, onUpdate, appwriteOk, liveKlasse, liveTeil
 
   return (
     <div>
-      {/* Klassen-Filter — Klick setzt gleichzeitig Live-Klasse */}
+      {/* Klassen-Filter mit eigenem Live-Button */}
       <div className="mb-4">
         <div className="flex flex-wrap gap-2">
           {KLASSEN.map(k => {
             const isLive = k === liveKlasse;
+            const isSelected = k === selectedKlasse;
             return (
-              <button
-                key={k}
-                onClick={() => handleKlasseClick(k)}
-                className={`px-3 py-1 rounded-full text-sm font-bold border transition-all relative ${
-                  selectedKlasse === k
-                    ? "bg-[#b1e6a8] text-black border-[#b1e6a8]"
-                    : "bg-[#1a1a1a] text-gray-300 border-[#333] hover:border-[#b1e6a8]"
-                }`}
-              >
-                {k}
-                {isLive && (
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#b1e6a8] rounded-full animate-pulse" />
-                )}
-              </button>
+              <div key={k} className="flex items-center gap-0.5">
+                <button
+                  onClick={() => handleKlasseClick(k)}
+                  className={`px-3 py-1 rounded-l-full text-sm font-bold border-y border-l transition-all ${
+                    isSelected
+                      ? "bg-[#b1e6a8] text-black border-[#b1e6a8]"
+                      : "bg-[#1a1a1a] text-gray-300 border-[#333] hover:border-[#b1e6a8]"
+                  }`}
+                >
+                  {k}
+                </button>
+                <button
+                  onClick={() => onSetLiveKlasse(isLive ? null : k)}
+                  title={isLive ? "Live deaktivieren" : "Klasse live schalten"}
+                  className={`px-1.5 py-1 rounded-r-full text-xs border-y border-r transition-all ${
+                    isLive
+                      ? "bg-[#b1e6a8] text-black border-[#b1e6a8] animate-pulse font-bold"
+                      : "bg-[#111] text-gray-600 border-[#333] hover:border-[#b1e6a8] hover:text-[#b1e6a8]"
+                  }`}
+                >
+                  ●
+                </button>
+              </div>
             );
           })}
         </div>
@@ -478,7 +488,11 @@ function TeilnehmerView({ teilnehmer, onUpdate, appwriteOk, liveKlasse, liveTeil
                 </td>
                 <td className="px-3 py-2">
                   <button
-                    onClick={() => onSetLiveTeilnehmer(t.id === liveTeilnehmerId ? null : t.id)}
+                    onClick={() => {
+                      const newId = t.id === liveTeilnehmerId ? null : t.id;
+                      onSetLiveTeilnehmer(newId);
+                      if (newId) onSetLiveKlasse(t.klasse);
+                    }}
                     className={`px-2 py-1 rounded text-xs font-bold border transition-colors ${
                       t.id === liveTeilnehmerId
                         ? "bg-[#b1e6a8] text-black border-[#b1e6a8] animate-pulse"
