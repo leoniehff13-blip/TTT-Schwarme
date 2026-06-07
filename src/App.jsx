@@ -1268,11 +1268,11 @@ export default function App() {
       }
     };
     poll();
-    const interval = setInterval(poll, 3000);
+    const interval = setInterval(poll, 10000);
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
-  // Teilnehmerdaten alle 5s mergen — nur geänderte Felder übernehmen
+  // Teilnehmerdaten alle 30s mergen — nur geänderte Felder übernehmen
   useEffect(() => {
     let cancelled = false;
     const pollData = async () => {
@@ -1309,7 +1309,7 @@ export default function App() {
         });
       } catch {}
     };
-    const interval = setInterval(pollData, 5000);
+    const interval = setInterval(pollData, 30000);
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
