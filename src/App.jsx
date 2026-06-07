@@ -657,8 +657,8 @@ function RanglisteView({ teilnehmer, liveKlasse }) {
                   <th className="px-3 py-2 text-left text-gray-500 w-10">#</th>
                   <th className="px-3 py-2 text-left text-gray-400">Name</th>
                   <th className="px-3 py-2 text-left text-gray-400 hidden sm:table-cell">Fahrzeug</th>
-                  <th className="px-3 py-2 text-right text-gray-400">Weite</th>
-                  <th className="px-3 py-2 text-right text-gray-400 hidden sm:table-cell">2. Weite</th>
+                  <th className="px-3 py-2 text-right text-gray-400">1. Weite</th>
+                  <th className="px-3 py-2 text-right text-gray-400">Ergebnis</th>
                 </tr>
               </thead>
               <tbody>
@@ -686,13 +686,13 @@ function RanglisteView({ teilnehmer, liveKlasse }) {
                     <td className="px-3 py-2 text-gray-400 hidden sm:table-cell">
                       {[t.hersteller, t.modell_nr].filter(Boolean).join(" ")}
                     </td>
+                    <td className="px-3 py-2 text-right font-mono text-gray-500">
+                      {fmWeite(t.weite)}
+                    </td>
                     <td className={`px-3 py-2 text-right font-mono font-bold ${
                       i === 0 ? "text-[#b1e6a8]" : "text-white"
                     }`}>
-                      {fmWeite(t.weite)}
-                    </td>
-                    <td className="px-3 py-2 text-right font-mono text-gray-400 hidden sm:table-cell">
-                      {fmWeite(t.weite2)}
+                      {t.weite2 != null ? fmWeite(t.weite2) : fmWeite(t.weite)}
                     </td>
                   </tr>
                 ))}
@@ -774,6 +774,11 @@ function StartAnzeige({ teilnehmer, liveKlasse, liveTeilnehmerId }) {
               <span className="flex items-center gap-1 bg-[#b1e6a8] text-black text-xs font-black px-2 py-0.5 rounded-full animate-pulse">
                 ● JETZT AM START
               </span>
+              {liveT.weite2 != null && (
+                <span className="flex items-center gap-1 bg-red-600 text-white text-xs font-black px-2 py-0.5 rounded-full animate-pulse">
+                  ⚡ STECHEN
+                </span>
+              )}
               <span className="text-gray-500 text-sm">{liveT.klasse} · {KLASSEN_INFO[liveT.klasse]?.gruppe}</span>
             </div>
 
@@ -831,6 +836,7 @@ function StartAnzeige({ teilnehmer, liveKlasse, liveTeilnehmerId }) {
       {klassenOrder.map(k => {
         const liste = sorted.filter(t => t.klasse === k);
         if (liste.length === 0) return null;
+        const hatStechen = liste.some(t => t.weite2 != null);
         return (
           <div key={k} className="border border-[#222] rounded-lg overflow-hidden">
             <div className={`px-4 py-2 text-sm font-bold border-b border-[#222] flex items-center gap-2 ${
@@ -838,6 +844,7 @@ function StartAnzeige({ teilnehmer, liveKlasse, liveTeilnehmerId }) {
             }`}>
               {k === liveKlasse && <span className="text-[#b1e6a8] text-xs animate-pulse">●</span>}
               {k} <span className="font-normal text-gray-500">{KLASSEN_INFO[k]?.gruppe}</span>
+              {hatStechen && <span className="ml-auto text-red-500 text-xs font-black">⚡ STECHEN</span>}
             </div>
             {liste.map(t => {
               const isLive = t.id === liveTeilnehmerId;
@@ -855,7 +862,7 @@ function StartAnzeige({ teilnehmer, liveKlasse, liveTeilnehmerId }) {
                     {t.name}
                   </span>
                   <span className="text-xs text-gray-600 font-mono mr-3">
-                    {t.weite != null ? fmWeite(t.weite) : "—"}
+                    {t.weite2 != null ? fmWeite(t.weite2) : t.weite != null ? fmWeite(t.weite) : "—"}
                   </span>
                 </div>
               );
