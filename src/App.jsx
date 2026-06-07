@@ -1256,16 +1256,41 @@ export default function App() {
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
-  // Teilnehmerdaten alle 5s neu laden (für alle Geräte)
+  // Teilnehmerdaten alle 5s mergen — nur geänderte Felder übernehmen
   useEffect(() => {
     let cancelled = false;
     const pollData = async () => {
       try {
         const docs = await loadFromAppwrite();
-        if (!cancelled && docs.length > 0) {
-          setTeilnehmer(docs);
-          saveLocal(docs);
-        }
+        if (cancelled || docs.length === 0) return;
+        setTeilnehmer(prev => {
+          let anyChange = false;
+          const next = prev.map(p => {
+            const fresh = docs.find(d => d.id === p.id);
+            if (!fresh) return p;
+            // Nur übernehmen wenn sich etwas in Appwrite geändert hat
+            const changed =
+              fresh.weite !== p.weite ||
+              fresh.weite2 !== p.weite2 ||
+              fresh.fan_votes !== p.fan_votes ||
+              fresh.startnummer !== p.startnummer ||
+              fresh.name !== p.name ||
+              fresh.klasse !== p.klasse;
+            if (!changed) return p;
+            anyChange = true;
+            return { ...p, ...fresh };
+          });
+          // Neue Teilnehmer aus Appwrite ergänzen
+          docs.forEach(fresh => {
+            if (!next.find(p => p.id === fresh.id)) {
+              next.push(fresh);
+              anyChange = true;
+            }
+          });
+          if (!anyChange) return prev; // kein Re-render wenn nichts geändert
+          saveLocal(next);
+          return next;
+        });
       } catch {}
     };
     const interval = setInterval(pollData, 5000);
